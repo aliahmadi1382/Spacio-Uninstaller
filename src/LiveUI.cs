@@ -38,7 +38,7 @@ namespace Spacio
         }
         private void AttachLive(bool reconcile)
         {
-            if (!liveEnabled || snapshot == null || current == null || snapshot.Cancelled || closing) return;
+            if (cleanupPageOpen || !liveEnabled || snapshot == null || current == null || snapshot.Cancelled || closing) return;
             if (liveMonitor != null && Paths.Equal(liveMonitor.Root, current.Path) && !liveMonitor.Failed)
             {
                 if (reconcile) liveMonitor.RequireFull();
@@ -83,7 +83,7 @@ namespace Spacio
         {
             if (closing) return;
             if ((DateTime.UtcNow - lastDriveRefresh).TotalSeconds >= 10) RefreshDrives();
-            if (busy || refreshing || manualRefreshPending || reviewingCleanup || snapshot == null || snapshot.Cancelled) return;
+            if (cleanupPageOpen || busy || refreshing || manualRefreshPending || reviewingCleanup || snapshot == null || snapshot.Cancelled) return;
             if (DateTime.UtcNow < nextLiveAttempt) return;
             AttachLive(false);
             if (liveMonitor == null) return;

@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.5.0
+
+- Add full-height Cache and Installed apps pages in Persian and English, with search, paths, logical sizes, file counts, ownership and explicit known/shared/unverified classifications.
+- Replace direct recycling with a review dialog listing every identified target and its complete scanned contents. Default to permanent deletion, requiring acknowledgement and confirmation each time; recycling remains an option and still vetoes permanent fallback.
+- Discover supported current-user browser, Electron, Adobe media and GPU caches using exact known directories. Additional/shared caches and name-only candidates are not selected automatically. Keep profile data, cookies, passwords, local storage and Spacio saved scans outside cache cleanup.
+- Use registered desktop-app uninstallers, with command review and registration revalidation; remaining caches require a separate review after the uninstaller finishes. Keep Windows Settings available for unsupported apps and commands.
+- Verify reviewed metadata again before deletion, reject changed/incomplete/system/link/cloud targets, block known running cache owners and report locked files without forcing processes to close. Keep cache root folders and delete only reviewed contents.
+- Reconcile affected saved subtrees after cleanup and retain the scan format/location. Pause file monitoring while browsing cleanup pages; returning resumes the current folder's monitoring.
+- Add isolated permanent-delete, stale-preview, locked-file, junction, ownership, command-parser and bilingual UI checks. No real user files are deleted and no installed apps are uninstalled by the tests.
+
 ## 1.4.2
 
 - Fix automatic startup, periodic and missed-notification checks refreshing a cached whole drive while a subfolder is open. Watch and reconcile only the visible folder; keep the surrounding saved tree and recalculate its totals.

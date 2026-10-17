@@ -1,5 +1,17 @@
 # Spacio project instructions
 
+## Cleanup behavior
+
+The user selected permanent deletion as the default, after a detailed preview
+and explicit confirmation every time. Keep recycling as a separate selectable
+mode with no permanent fallback. Additional/shared/unverified cache candidates
+must not be preselected. Only exact supported cache directories may use the
+narrow AppData exception; never treat a folder name alone as proof. Preserve
+Spacio scans/preferences and reject incomplete, linked, cloud and system targets.
+Use registered uninstallers for applications and require separate review of
+remaining caches. Do not claim an exhaustive per-file cache association.
+Verify destructive behavior using generated isolated fixtures only.
+
 ## Version control workflow
 
 The user has explicitly authorized committing and pushing completed changes to

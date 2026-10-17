@@ -6,7 +6,8 @@ using System.Threading.Tasks;
 
 namespace Spacio
 {
-    // Windows Shell API: recycle only. The progress sink vetoes permanent deletion.
+    // Windows Shell API. Recycling vetoes a permanent fallback. Permanent deletion
+    // is available only through the explicitly confirmed cleanup workflow.
     public static class Recycler
     {
         public static Task<List<string>> RecycleAsync(List<Entry> entries, Snapshot snapshot, IntPtr owner, CancellationToken cancel)
@@ -45,14 +46,18 @@ namespace Spacio
 
         private static void RecycleOne(string path, IntPtr owner)
         {
+            DeleteReviewedPath(path, owner, false);
+        }
+        internal static void DeleteReviewedPath(string path, IntPtr owner, bool permanent)
+        {
             IFileOperation operation = null; IShellItem item = null;
-            var sink = new RecycleSink();
+            var sink = new RecycleSink(permanent);
             try
             {
                 operation = (IFileOperation)Activator.CreateInstance(Type.GetTypeFromCLSID(new Guid("3AD05575-8857-4850-9277-11B85BDB8E09")));
                 // RECYCLEONDELETE | ADDUNDORECORD | EARLYFAILURE | NOERRORUI | SILENT |
                 // NOCONFIRMATION | NO_CONNECTED_ELEMENTS. Never request elevation.
-                Check(operation.SetOperationFlags(0x00080000 | 0x20000000 | 0x00100000 | 0x0400 | 0x0004 | 0x0010 | 0x2000));
+                Check(operation.SetOperationFlags((permanent ? 0u : 0x00080000u | 0x20000000u) | 0x00100000 | 0x0400 | 0x0004 | 0x0010 | 0x2000));
                 Check(operation.SetOwnerWindow(owner));
                 Guid iid = new Guid("43826D1E-E718-42EE-BC55-A1E261C37BFE");
                 Check(SHCreateItemFromParsingName(path, IntPtr.Zero, ref iid, out item));
@@ -127,12 +132,15 @@ namespace Spacio
     [ComVisible(true), ClassInterface(ClassInterfaceType.None)]
     public sealed class RecycleSink : IFileOperationProgressSink
     {
+        private readonly bool permanent;
+        public RecycleSink() { }
+        internal RecycleSink(bool allowPermanent) { permanent = allowPermanent; }
         public bool PermanentDeleteBlocked, Succeeded;
         public int Result;
         public int PreDeleteItem(uint flags, IShellItem item)
         {
             // TSF_DELETE_RECYCLE_IF_POSSIBLE is set only for a recycling operation.
-            if ((flags & 0x80) == 0) { PermanentDeleteBlocked = true; return unchecked((int)0x80004004); }
+            if (!permanent && (flags & 0x80) == 0) { PermanentDeleteBlocked = true; return unchecked((int)0x80004004); }
             return 0;
         }
         public int PostDeleteItem(uint flags, IShellItem item, int result, IShellItem newItem) { Result = result; Succeeded = result >= 0; return 0; }

@@ -4,6 +4,12 @@
 
 برنامهٔ دسکتاپ ویندوز برای بررسی حجم فایل‌ها و پوشه‌ها، با رابط فارسی و انگلیسی.
 
+نسخهٔ **۱.۵.۰** صفحهٔ کامل **Cache** و **برنامه‌های نصب‌شده** را اضافه می‌کند. فایل یا پوشه را انتخاب کنید و **مرور حذف و کش‌های مرتبط** را بزنید: مسیر، حجم، نوع ارتباط و فهرست کامل محتوای شناسایی‌شده قبل از حذف نمایش داده می‌شود. **حذف دائمی** پیش‌فرض است و هر بار به تأیید جزئیات و پذیرش غیرقابل‌بازگردانی از سطل بازیافت نیاز دارد؛ می‌توانید آن را به انتقال به سطل بازیافت تغییر دهید. کش اضافی، مشترک و پوشهٔ احتمالی خودکار انتخاب نمی‌شوند.
+
+صفحهٔ Cache مسیرهای شناخته‌شدهٔ کاربر فعلی را بررسی می‌کند: کش Chrome، Edge، Brave، Firefox، VS Code، Discord، Slack، Steam، کش رسانه‌ای مشترک Adobe و کش shaderهای DirectX/NVIDIA/AMD. پوشه‌های با نام `cache` یا `.cache` در اسکن بازشده فقط با برچسب **نیازمند بررسی** نمایش داده می‌شوند. این فهرست همهٔ کش‌های هر سیستم یا هر فایل را تضمین نمی‌کند؛ مسیرهای سفارشی، حساب‌های دیگر، داده‌های حساب/کوکی/رمز، کش نصب‌کننده‌ها و فایل‌های شخصی به‌عنوان کش شناخته‌شده حذف نمی‌شوند. پوشهٔ اصلی کش نگه داشته می‌شود و فقط محتوای مرورشده پاک می‌شود. کش‌های مشترک متعلق به یک فایل خاص نیستند؛ بازسازی آن‌ها ممکن است اجرای بعدی برنامه را کندتر کند.
+
+برای برنامه‌ها، حذف‌کنندهٔ ثبت‌شدهٔ خود برنامه اجرا می‌شود؛ پس از پایان آن، **بررسی دوباره** در Cache را بزنید و کش‌های باقی‌مانده را جدا تأیید کنید. برنامه‌های دسکتاپ ثبت‌شده فهرست می‌شوند؛ برنامه‌های دیگر از **تنظیمات برنامه‌های ویندوز** مدیریت می‌شوند. برنامهٔ باز یا فایل قفل‌شده خودکار بسته نمی‌شود و مورد ناموفق در گزارش می‌ماند. این نسخه رجیستری یا داده‌های ناشناخته را به‌عنوان «باقی‌مانده» حدس نمی‌زند.
+
 در نسخهٔ **۱.۴.۲** پایش خودکار هم فقط پوشهٔ بازشده و زیرپوشه‌هایش را دنبال می‌کند؛ حتی اگر نتیجهٔ آن از اسکن ذخیره‌شدهٔ کل درایو آمده باشد. بررسی شروع برنامه، بررسی دوره‌ای و جبران اعلان‌های ازدست‌رفته به همان پوشه محدودند. با ورود به پوشهٔ دیگری، بررسی خودکار قبلی لغو می‌شود. Refresh دستی نیز می‌تواند بررسی خودکار فعال را متوقف کند و مسیر کادر را تازه‌سازی کند. سایر بخش‌های اسکن ذخیره‌شده باقی می‌مانند و هنگام بازکردنشان بررسی می‌شوند.
 
 در نسخهٔ **۱.۴.۱** بخش‌های **پوشه‌ها و فایل‌ها، فایل‌های بزرگ، فایل‌های قدیمی و نوع فایل‌ها** صفحهٔ کامل دارند. آن‌ها را از نوار کناری باز کنید، یا بالای جدول نمای کلی **نمایش در صفحهٔ کامل** را بزنید. جدول جای کارت‌ها و نقشه را می‌گیرد تا ردیف‌های بیشتری دیده شوند؛ جست‌وجو، فیلترها، به‌روزرسانی زنده و خروجی CSV در دسترس می‌مانند. با **بازگشت به نمای کلی** دوباره کارت‌ها و نقشه نمایش داده می‌شوند.
@@ -20,8 +26,8 @@
 2. روی درایو در نوار کناری کلیک کنید، یا پوشه‌ای انتخاب کنید و **باز کردن / اسکن** را بزنید. مسیر جدید اسکن می‌شود؛ مسیر قبلی از نتیجهٔ ذخیره‌شده باز می‌شود و تغییرات خودکار بررسی می‌شوند. **تازه‌سازی ↻ / Refresh** فقط مسیر داخل کادر و زیرپوشه‌هایش را در پس‌زمینه بررسی می‌کند. با ورود به پوشه، مسیر کادر نیز تغییر می‌کند. مثلاً در `C:\Projects\Git-Hub`، Refresh کل درایو C را دوباره نمی‌خواند؛ فقط حجم مجموع پوشه‌های بالاتر با دادهٔ جدید محاسبه می‌شود. جدول هنگام بررسی در دسترس می‌ماند.
 3. نقشهٔ فضا و جدول حجم کل زیرپوشه‌ها را نشان می‌دهند. برای ورود به یک پوشه روی نقشه کلیک کنید یا روی ردیف آن دوبار کلیک کنید.
 4. از **فایل‌های بزرگ**، **فایل‌های قدیمی** و **نوع فایل‌ها** استفاده کنید. جست‌وجو زیرپوشه‌ها را هم بررسی می‌کند. فیلتر حجم، تاریخ و ترتیب نمایش در بالای جدول قرار دارند.
-5. با Ctrl یا Shift چند ردیف را انتخاب کنید. **انتقال به سطل بازیافت** ابتدا فهرست دقیق مسیرها را برای تأیید نشان می‌دهد. کلید Delete همین پنجرهٔ تأیید را باز می‌کند.
-6. فایل‌ها تا خالی‌کردن سطل بازیافت در ویندوز همچنان فضای دیسک را اشغال می‌کنند. پس از انتقال، اطلاعات به‌صورت خودکار به‌روز می‌شوند؛ کارت فضای آزاد درایو نیز هر ده ثانیه تازه می‌شود.
+5. با Ctrl یا Shift چند ردیف را انتخاب کنید. **مرور حذف و کش‌های مرتبط** فهرست دقیق مسیرها و محتوایشان را برای تأیید نشان می‌دهد. کلید Delete همین پنجرهٔ تأیید را باز می‌کند. پیش‌فرض حذف دائمی است؛ انتقال به سطل بازیافت هم قابل انتخاب است.
+6. پس از پاک‌سازی، اطلاعات مسیرهای مرتبط به‌روز می‌شوند؛ کارت فضای آزاد درایو نیز هر ده ثانیه تازه می‌شود. در حالت بازیافت، فایل‌ها تا خالی‌کردن سطل بازیافت در ویندوز همچنان فضای دیسک را اشغال می‌کنند.
 
 برای آزمایش: یک مسیر را اسکن کنید و پس از ذخیره برنامه را ببندید. یک فایل آزمایشی را حذف یا جابه‌جا کنید و برنامه را دوباره باز کنید. نتیجهٔ قبلی ابتدا نمایش داده می‌شود و تغییرات در پس‌زمینه اعمال و ذخیره می‌شوند. هنگام باز بودن برنامه هم تغییرات مسیر اسکن‌شده بدون فشردن Refresh دنبال می‌شوند. فایل‌های جدید معمولاً پس از چند ثانیه دیده می‌شوند؛ تعداد زیاد تغییرات، درایو کند یا بررسی کامل زمان بیشتری می‌خواهد.
 
@@ -37,7 +43,7 @@
 
 اگر هنگام حذف در Explorer پیام **Folder In Use** ظاهر شد، پنجره‌ها یا برنامه‌هایی را که از آن پوشه یا زیرپوشه‌هایش استفاده می‌کنند ببندید و دوباره امتحان کنید. «نمایش در Explorer» مورد انتخابی را در پوشهٔ والد نشان می‌دهد و برنامه‌های دیگر را نمی‌بندد. پایش زنده با تغییر نام یا حذف پوشه سازگار است؛ این رفتار با یک پوشهٔ آزمایشی بررسی می‌شود.
 
-برای حذف نرم‌افزارهای نصب‌شده، دکمهٔ **برنامه‌های نصب‌شده** تنظیمات مربوط ویندوز را باز می‌کند.
+برای حذف نرم‌افزارهای نصب‌شده، صفحهٔ **برنامه‌های نصب‌شده** را باز کنید و **مرور حذف برنامه و کش** را بزنید. دستور حذف‌کننده پیش از اجرا در توضیح دکمه قابل مشاهده است؛ پاک‌سازی کش تأیید جداگانه دارد.
 
 ## رفتار اسکن و پاک‌سازی
 
@@ -52,11 +58,17 @@
 - پس از تلاش پاک‌سازی، نتیجه‌های مرتبط «تغییریافته» علامت می‌خورند. بررسی خودکار نتیجهٔ بازشده را به‌روز می‌کند؛ تا پایان بررسی، پاک‌سازی بعدی غیرفعال است. فایل انتخابی پیش از حذف دوباره بررسی می‌شود.
 - ریشهٔ اسکن، مسیرهای سیستم و برنامه‌ها، AppData، پروفایل کاربران، محل اجرای خود برنامه و پوشه‌های حاوی موارد سیستمی یا بررسی‌نشده محافظت می‌شوند.
 - قبل از انتقال، فرادادهٔ فایل یا تمام درخت پوشه با نتیجهٔ اسکن مقایسه می‌شود. تغییرات مشاهده‌شده عملیات را متوقف می‌کنند. این مقایسه قفل فایل یا snapshot اتمیک نیست؛ هنگام پاک‌سازی از تغییر هم‌زمان پوشهٔ انتخابی خودداری کنید.
-- عملیات از Windows Shell و `IFileOperation` استفاده می‌کند. اگر ویندوز امکان بازیافت را نداشته باشد، callback پیش از حذف دائمی آن را رد می‌کند. حذف دائمی یا خالی‌کردن خودکار سطل بازیافت در برنامه وجود ندارد.
+- عملیات از Windows Shell و `IFileOperation` استفاده می‌کند. حالت حذف دائمی فقط پس از تأیید صریح اجرا می‌شود. در حالت سطل بازیافت، اگر ویندوز امکان بازیافت را نداشته باشد، callback حذف دائمی را رد می‌کند. سطل بازیافت خودکار خالی نمی‌شود. استثنای حفاظت AppData فقط برای مسیر دقیق کش‌های پشتیبانی‌شده است؛ کش با محتوای ناقص، پیوندی، ابری یا سیستمی پاک نمی‌شود. اسکن‌ها و تنظیمات Spacio محافظت می‌شوند.
 - انتخاب هم‌زمان پوشه و فرزندش فقط یک بار پردازش می‌شود.
 - زبان در `%LOCALAPPDATA%\Spacio\language.txt` ذخیره می‌شود. گزارش CSV تنها در مسیر انتخاب‌شده توسط شما نوشته می‌شود.
 
 ## English
+
+**Cache review and app removal in 1.5.0:** Open **Cache** in the sidebar to inspect known cache paths, logical sizes, file counts and ownership. Search by app or path, select rows, and use **Review cleanup** to inspect every scanned file/folder before confirming. File results use the same review workflow. Permanent deletion is the default and requires an acknowledgement plus explicit confirmation every time. Uncheck permanent deletion to use the Recycle Bin instead. Additional, shared and unverified cache candidates are never preselected. Cancel leaves files unchanged.
+
+The catalogue covers default current-user Chrome/Edge/Brave profile Cache, Code Cache and GPUCache; Firefox local profile cache2/startupCache/shader-cache; VS Code, Discord variants and Slack Cache/Code Cache/GPUCache; Steam htmlcache; Adobe Common Media Cache/Media Cache Files; DirectX D3DSCache and supported NVIDIA/AMD shader-cache directories. Cache roots remain; only reviewed contents are removed. This is not an exhaustive cache-to-file map. Custom locations, other accounts, installer caches, browser cookies/passwords/local storage and unknown user data are excluded. `cache`/`.cache` directories in the open scan are unverified candidates and retain ordinary path protections. Shared caches are not attributable to one document. Rebuilding caches may slow the next launch. Catalogue context: [Chromium profile locations](https://chromium.googlesource.com/chromium/src/+/HEAD/docs/user_data_dir.md), [Electron user data](https://www.electronjs.org/docs/latest/api/app), [Adobe media-cache cleanup](https://helpx.adobe.com/ca/premiere/desktop/troubleshooting/media-issues/delete-media-cache-files-manually.html).
+
+**Installed apps** lists registered desktop applications. Review an app and its known cache families, then launch its registered uninstaller (the command is visible in the button tooltip). Registration is rechecked before launch; unsupported commands and other apps can use Windows Settings. After the uninstaller finishes, check the Cache page again and confirm any remaining caches separately. Spacio does not infer completion from a launcher exiting, force processes closed, or guess registry leftovers. Association with a selected file uses registered install-location boundaries, not filename similarity. See [Windows uninstall registration](https://learn.microsoft.com/en-us/windows/win32/msi/uninstall-registry-key).
 
 **Focused live updates in 1.4.2:** The live watcher follows the visible folder, even when that folder is restored from a cached whole-drive tree. Startup, periodic and notification-overflow checks use that same scope. Navigation cancels obsolete automatic work. Manual Refresh can interrupt automatic work and check the typed path; the rest of the cached tree is retained and ancestor totals are recalculated. Other folders are reconciled when opened.
 
@@ -76,11 +88,11 @@ Packages are accepted only from the repository's release URL and approved HTTPS 
 
 Compressed, versioned snapshots remain under `%LOCALAPPDATA%\Spacio\Scans` with the same data-only format and atomic replacement. A refresh constructs a separate replacement tree and saves it before switching the displayed result. Cancellation, unavailable roots or failed saves keep the prior good result. Previously known contents of newly inaccessible paths are retained and marked incomplete. No-change validation preserves cache bytes and scan time. Cleanup still invalidates related caches and verifies every selected target.
 
-Switch to **English** at the top of the window. Select a drive or folder to scan; explore the space map, drill into folders, and filter by size, last change, or file category. Search includes descendants. Use Ctrl/Shift to select multiple rows, then review the exact paths before moving them to the Recycle Bin. Space is reclaimed when you empty the Recycle Bin in Windows. Results update automatically after cleanup.
+Switch to **English** at the top of the window. Select a drive or folder to scan; explore the space map, drill into folders, and filter by size, last change, or file category. Search includes descendants. Use Ctrl/Shift to select multiple rows, then review the exact paths and contents before confirming permanent deletion or recycling. Recycling reclaims space when you empty the Recycle Bin in Windows. Results update after cleanup using the affected subtrees.
 
 Scanning reads metadata only. Junctions, symbolic links, cloud placeholders, and inaccessible items are reported as skipped. Logical sizes may differ from disk allocation, and hard links are counted per path. Dates use the Gregorian calendar and local time; folder dates reflect the most recent change in the folder or its descendants. The older-files view starts at 180 days. Creation and original modification dates are available in each row's tooltip.
 
-System/application paths, user profiles, AppData, scan roots, and incomplete results cannot authorize recycling. Metadata is rechecked before each operation, but this is not an atomic filesystem snapshot. Windows operations that would permanently delete an item are vetoed. The application never empties the Recycle Bin. The Installed apps button opens Windows Settings for application uninstallation.
+System/application paths, user profiles, scan roots and incomplete results cannot authorize ordinary file cleanup. Exact authenticated cache directories are the only narrow AppData exception; system entries, links, cloud placeholders, Spacio scans and its executable directory remain protected. Metadata is rechecked before each operation, but this is not an atomic filesystem snapshot: avoid modifying a target during deletion. Known running cache owners block cleanup; locked files produce per-path errors. Recycling vetoes a permanent fallback. Explicit permanent mode requires separate acknowledgement. The application never empties the Recycle Bin.
 
 The table displays up to 2,000 matching rows; CSV exports every matching result. Do not sum folder and child rows together because folder totals already include their descendants. Reports use UTF-8 and neutralize formula-like cell content.
 
@@ -102,7 +114,7 @@ cd Spacio-Uninstaller
 .\tools\package.ps1 -Executable .\dist\v1.4\Spacio.exe
 ```
 
-`test.ps1` creates isolated fixtures under `.test-data`, including a junction to another generated fixture, paths longer than 260 characters, and 10,000 empty files. Its recycle integration checks move only generated test files and a generated test folder to the Recycle Bin. It leaves these fixtures available for inspection. Reports and off-screen Persian/English screenshots are saved to `artifacts`.
+`test.ps1` creates isolated fixtures under `.test-data`, including a junction to another generated fixture, paths longer than 260 characters, and 10,000 empty files. Recycling and permanent-cleanup integration checks remove only generated test files/folders. Cleanup checks cover stale previews, known-cache boundaries, protected scan bytes, locked files, running owners, cancellation and command parsing without launching an uninstaller. Bilingual cleanup UI checks use generated cache fixtures under `artifacts` and test acknowledgement and cancellation. Remaining fixtures are available for inspection. Reports and off-screen Persian/English screenshots are saved to `artifacts`.
 
 Live checks cover actual Windows create/delete/rename/resize notifications, startup reconciliation, incremental aggregate correctness, overflow fallback, cancellation, exact cache preservation and UI heartbeat responsiveness while a cache write is blocked.
 

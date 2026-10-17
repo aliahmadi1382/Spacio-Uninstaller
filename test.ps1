@@ -18,6 +18,11 @@ $liveProcess = Start-Process -FilePath $exePath -ArgumentList @('--live-test', (
 if (-not $liveProcess.WaitForExit(120000)) { throw 'Live checks exceeded 120 seconds.' }
 Get-Content -LiteralPath $liveReport
 if ($liveProcess.ExitCode -ne 0) { throw 'Live checks failed.' }
+$cleanupReport = Join-Path $artifactPath 'cleanup-tests.txt'
+$cleanupProcess = Start-Process -FilePath $exePath -ArgumentList @('--cleanup-test', ('"' + $cleanupReport + '"')) -WindowStyle Hidden -PassThru
+if (-not $cleanupProcess.WaitForExit(60000)) { throw 'Cleanup checks exceeded 60 seconds.' }
+Get-Content -LiteralPath $cleanupReport
+if ($cleanupProcess.ExitCode -ne 0) { throw 'Cleanup checks failed.' }
 $updateReport = Join-Path $artifactPath 'update-tests.txt'
 $updateProcess = Start-Process -FilePath $exePath -ArgumentList @('--update-test', ('"' + $updateReport + '"')) -WindowStyle Hidden -PassThru
 if (-not $updateProcess.WaitForExit(60000)) { throw 'Update checks exceeded 60 seconds.' }
@@ -31,6 +36,8 @@ if ((Test-Path -LiteralPath ($previewPrefix + '.error.txt')) -or -not (Test-Path
 Get-Content -LiteralPath ($previewPrefix + '.ok.txt')
 if (-not (Test-Path -LiteralPath ($previewPrefix + '.pages.ok.txt'))) { throw 'Full results page checks failed.' }
 Get-Content -LiteralPath ($previewPrefix + '.pages.ok.txt')
+if (-not (Test-Path -LiteralPath ($previewPrefix + '.cleanup.ok.txt'))) { throw 'Cleanup page and confirmation checks failed.' }
+Get-Content -LiteralPath ($previewPrefix + '.cleanup.ok.txt')
 $reopenProcess = Start-Process -FilePath $exePath -ArgumentList @('--ui-smoke', ('"' + $fixturePath + '"'), ('"' + $previewPrefix + '"'), '--reopen') -WindowStyle Hidden -PassThru
 if (-not $reopenProcess.WaitForExit(60000)) { throw 'Cache restart check exceeded 60 seconds.' }
 if ($reopenProcess.ExitCode -ne 0 -or -not (Test-Path -LiteralPath ($previewPrefix + '.reopen.ok.txt'))) { throw 'Cache restart check failed.' }

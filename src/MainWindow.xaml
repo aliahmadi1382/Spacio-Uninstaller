@@ -46,6 +46,7 @@
      <Button x:Name="LargestNav" Style="{StaticResource Nav}"><TextBlock Tag="فایل‌های بزرگ"/></Button>
      <Button x:Name="OldNav" Style="{StaticResource Nav}"><TextBlock Tag="فایل‌های قدیمی"/></Button>
      <Button x:Name="TypesNav" Style="{StaticResource Nav}"><TextBlock Tag="نوع فایل‌ها"/></Button>
+     <Button x:Name="CacheNav" Style="{StaticResource Nav}"><TextBlock Text="Cache"/></Button>
      <Border Height="1" Background="#2A343C" Margin="4,12"/>
      <TextBlock Tag="درایوهای شما" FontSize="10" Foreground="#7F939F" Margin="10,0,0,12"/>
     </StackPanel>
@@ -119,8 +120,47 @@
    <Grid Grid.Row="5" Margin="0,10,0,0"><Grid.RowDefinitions><RowDefinition Height="*"/><RowDefinition Height="21"/></Grid.RowDefinitions><Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
     <TextBlock x:Name="SelectionInfo" Tag="انتخابی ندارید" Foreground="#9DB0BD" FontSize="11" TextTrimming="CharacterEllipsis"/>
     <Button x:Name="RevealButton" Grid.Column="1" Tag="نمایش در Explorer" FontSize="11" Padding="11,7" Margin="8,0"/>
-    <Button x:Name="RecycleButton" Grid.Column="2" Tag="انتقال به سطل بازیافت" Background="#3F2C2D" Foreground="#F1B6AB" FontSize="11" Padding="13,7" IsEnabled="False"/>
+    <Button x:Name="RecycleButton" Grid.Column="2" Tag="مرور حذف و کش‌های مرتبط" Background="#3F2C2D" Foreground="#F1B6AB" FontSize="11" Padding="13,7" IsEnabled="False"/>
    </Grid><Grid Grid.Row="1"><Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions><ProgressBar x:Name="Activity" Width="55" Height="3" IsIndeterminate="True" Foreground="#6BE2C4" Background="#25332F" BorderThickness="0" Visibility="Collapsed" Margin="0,0,9,0"/><TextBlock x:Name="StatusText" Grid.Column="1" Tag="آمادهٔ اسکن" FontSize="10" Foreground="#7793A2" TextTrimming="CharacterEllipsis"/><TextBlock x:Name="LiveStatus" Grid.Column="2" FontSize="10" Foreground="#8CE9CE" MaxWidth="270" TextTrimming="CharacterEllipsis" Margin="12,0,0,0"/></Grid></Grid>
+  </Grid>
+  <Grid x:Name="CleanupWorkspace" Grid.Row="1" Grid.Column="1" Margin="26,24,26,14" Visibility="Collapsed">
+   <Grid.RowDefinitions><RowDefinition Height="76"/><RowDefinition Height="70"/><RowDefinition Height="50"/><RowDefinition Height="*"/><RowDefinition Height="74"/></Grid.RowDefinitions>
+   <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+    <StackPanel><TextBlock x:Name="CleanupTitle" Text="Cache" FontSize="26" FontWeight="SemiBold"/><TextBlock x:Name="CleanupSubtitle" FontSize="12" Foreground="#93ABA5" Margin="0,7,0,0"/></StackPanel>
+    <Button x:Name="CleanupBack" Grid.Column="1" Tag="بازگشت به فایل‌ها" VerticalAlignment="Top" Margin="8,0" Background="#203A32" Foreground="#8CE9CE"/>
+    <Button x:Name="CleanupLanguage" Grid.Column="2" Content="English ⇄" VerticalAlignment="Top" Background="#253039"/>
+   </Grid>
+   <Border Grid.Row="1" Background="#1B2C28" CornerRadius="9" Padding="13,8" Margin="0,0,0,12"><TextBlock x:Name="CleanupCoverage" Foreground="#A9C4BA" FontSize="12" TextWrapping="Wrap"/></Border>
+   <Grid Grid.Row="2" Margin="0,0,0,10"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+    <Grid><TextBox x:Name="CleanupSearch" FontSize="12"/><TextBlock x:Name="CleanupSearchPlaceholder" Tag="جست‌وجو با نام برنامه یا مسیر" FontSize="12" Foreground="#8197A6" Margin="12,0" VerticalAlignment="Center" IsHitTestVisible="False"/></Grid>
+    <Button x:Name="CleanupScan" Grid.Column="1" Tag="بررسی دوباره" Margin="8,0,0,0" Background="#69DDB7" Foreground="#123E2D"/>
+    <Button x:Name="CleanupStop" Grid.Column="2" Tag="توقف" Margin="8,0,0,0" Visibility="Collapsed"/>
+   </Grid>
+   <Border Grid.Row="3" Background="#161E24" BorderBrush="#2A363F" BorderThickness="1" CornerRadius="10" ClipToBounds="True">
+    <Grid>
+     <DataGrid x:Name="CacheGrid" AutoGenerateColumns="False" IsReadOnly="True" CanUserAddRows="False" CanUserDeleteRows="False" SelectionMode="Extended" SelectionUnit="FullRow" HeadersVisibility="Column" RowHeight="70" GridLinesVisibility="None" BorderThickness="0" Background="#161E24" EnableRowVirtualization="True" EnableColumnVirtualization="True" ScrollViewer.CanContentScroll="True">
+      <DataGrid.Columns>
+       <DataGridTemplateColumn Width="*" MinWidth="270"><DataGridTemplateColumn.CellTemplate><DataTemplate><StackPanel><TextBlock Text="{Binding Owner}" Foreground="#92E2C2" FontWeight="SemiBold"/><TextBlock Text="{Binding Path}" FontSize="11" Foreground="#91A7B4" TextTrimming="CharacterEllipsis" FlowDirection="LeftToRight" ToolTip="{Binding Path}" Margin="0,4,0,0"/><TextBlock Text="{Binding Evidence}" FontSize="10" Foreground="#7F97A0" TextTrimming="CharacterEllipsis" ToolTip="{Binding Evidence}"/></StackPanel></DataTemplate></DataGridTemplateColumn.CellTemplate></DataGridTemplateColumn>
+       <DataGridTextColumn Binding="{Binding Size}" Width="100"/>
+       <DataGridTextColumn Binding="{Binding Count}" Width="85"/>
+       <DataGridTextColumn Binding="{Binding Kind}" Width="130"/>
+       <DataGridTextColumn Binding="{Binding Status}" Width="180"/>
+      </DataGrid.Columns>
+     </DataGrid>
+     <DataGrid x:Name="InstalledAppsGrid" Visibility="Collapsed" AutoGenerateColumns="False" IsReadOnly="True" CanUserAddRows="False" CanUserDeleteRows="False" SelectionMode="Single" SelectionUnit="FullRow" HeadersVisibility="Column" RowHeight="52" GridLinesVisibility="None" BorderThickness="0" Background="#161E24" EnableRowVirtualization="True" EnableColumnVirtualization="True" ScrollViewer.CanContentScroll="True">
+      <DataGrid.Columns><DataGridTextColumn Binding="{Binding Name}" Width="2*"/><DataGridTextColumn Binding="{Binding Version}" Width="110"/><DataGridTextColumn Binding="{Binding Publisher}" Width="*"/><DataGridTextColumn Binding="{Binding Location}" Width="2*"/></DataGrid.Columns>
+     </DataGrid>
+     <TextBlock x:Name="CleanupEmpty" Tag="برای دیدن موارد، بررسی را اجرا کنید" Foreground="#91A7B4" FontSize="15" HorizontalAlignment="Center" VerticalAlignment="Center" IsHitTestVisible="False"/>
+    </Grid>
+   </Border>
+   <Grid Grid.Row="4" Margin="0,10,0,0"><Grid.RowDefinitions><RowDefinition Height="*"/><RowDefinition Height="25"/></Grid.RowDefinitions>
+    <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+     <TextBlock x:Name="CleanupCount" FontSize="11" Foreground="#9DB0BD"/>
+     <Button x:Name="CleanupSettings" Grid.Column="1" Tag="تنظیمات برنامه‌های ویندوز" Margin="8,0" FontSize="11" Padding="10,7"/>
+     <Button x:Name="CleanupReview" Grid.Column="2" Tag="مرور پاک‌سازی" Background="#3F2C2D" Foreground="#F1B6AB" FontSize="11" Padding="14,7"/>
+    </Grid>
+    <TextBlock x:Name="CleanupStatus" Grid.Row="1" FontSize="10" Foreground="#91BBAA" TextTrimming="CharacterEllipsis"/>
+   </Grid>
   </Grid>
  </Grid>
 </Window>
