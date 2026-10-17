@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.3.1
+
+- Update drive free-space cards after a successful Refresh, alongside the persisted file/folder results.
+
 ## 1.3.0
 
 - Automatically restore the last viewed saved scan at startup without walking the drive again, including existing 1.2 caches.

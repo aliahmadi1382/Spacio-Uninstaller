@@ -276,7 +276,7 @@ namespace Spacio
             {
                 savingScan = false;
                 scanCancel.Dispose(); scanCancel = null;
-                if (!closing) { SetBusy(false, false); UpdateSelection(); }
+                if (!closing) { SetBusy(false, false); UpdateSelection(); if (forceRescan && cacheSaved) RefreshDrives(); }
                 if (closeAfterSave) Window.Close();
             }
         }
