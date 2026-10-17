@@ -9,6 +9,15 @@ namespace Spacio
     {
         public static bool Persian = true;
         private static readonly Dictionary<string, string> English = new Dictionary<string, string> {
+            {"بررسی کامل نتیجهٔ بازشده در پس‌زمینه؛ جدول هنگام بررسی باقی می‌ماند.", "Validates the open scan in the background while keeping the table available."},
+            {"انتقال تمام شد؛ نتیجه به‌صورت خودکار به‌روز می‌شود.", "Recycling finished; results will update automatically."},
+            {"نتیجهٔ ذخیره‌شده ابتدا باز می‌شود و تغییرات در پس‌زمینه بررسی می‌شوند.", "Saved results open first; changes are checked in the background."},
+            {"زنده · تغییرات خودکار دنبال می‌شوند", "Live · watching for changes"},
+            {"بررسی تغییرات در پس‌زمینه…", "Checking changes in the background…"},
+            {"مسیر در دسترس نیست؛ نتیجهٔ ذخیره‌شده حفظ شده است", "Path unavailable; saved results retained"},
+            {"بررسی متوقف شد؛ نتیجهٔ قبلی حفظ شده است", "Check stopped; previous results retained"},
+            {"بررسی ممکن نشد؛ تلاش دوباره به‌صورت خودکار", "Check failed; retrying automatically"},
+            {"تغییرات بررسی و ذخیره شد", "Changes checked and saved"},
             {"تازه‌سازی ↻", "Refresh ↻"},
             {"حذف‌ها، جابه‌جایی‌ها و تغییر حجم در مسیر بالا بررسی و نتیجهٔ ذخیره‌شده به‌روز می‌شود.", "Rechecks the path above for deleted, moved or changed files and updates its saved result."},
             {"این اطلاعات مربوط به زمان اسکن است. برای دیدن تغییرات جدید «تازه‌سازی» را بزنید.", "Results reflect the displayed scan time. Use Refresh to see changes."},

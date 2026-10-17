@@ -46,7 +46,7 @@ namespace Spacio
         private Snapshot snapshot;
         private Entry current;
         private CancellationTokenSource scanCancel, queryCancel;
-        private bool busy, stale, changingLanguage, closing;
+        private bool busy, stale, changingLanguage, closing, restoringSelection, reviewingCleanup;
         private bool viewingCached, cacheSaved;
         private bool savingScan, closeAfterSave;
         private readonly SnapshotCache cache;
@@ -71,7 +71,7 @@ namespace Spacio
             U<Button>("BrowseButton").Click += delegate { Browse(); };
             U<Button>("ScanButton").Click += async delegate { await ScanAsync(U<TextBox>("PathBox").Text); };
             U<Button>("RescanButton").Click += async delegate { await ScanAsync(U<TextBox>("PathBox").Text, true); };
-            U<Button>("StopButton").Click += delegate { if (scanCancel != null) scanCancel.Cancel(); };
+            U<Button>("StopButton").Click += delegate { if (scanCancel != null) scanCancel.Cancel(); if (refreshCancel != null) refreshCancel.Cancel(); };
             U<TextBox>("PathBox").KeyDown += async (s, e) => { if (e.Key == Key.Enter && !busy) await ScanAsync(U<TextBox>("PathBox").Text); };
             U<TextBox>("SearchBox").TextChanged += delegate { U<TextBlock>("SearchPlaceholder").Visibility = U<TextBox>("SearchBox").Text.Length == 0 ? Visibility.Visible : Visibility.Collapsed; searchTimer.Stop(); searchTimer.Start(); };
             foreach (var name in new [] { "SizeFilter", "AgeFilter", "SortFilter" }) U<ComboBox>(name).SelectionChanged += delegate { if (!changingLanguage) RefreshRows(); };
@@ -83,7 +83,7 @@ namespace Spacio
             U<Button>("RevealButton").Click += delegate { Reveal(); };
             U<Button>("RecycleButton").Click += async delegate { await RecycleSelected(); };
             U<Button>("ExportButton").Click += async delegate { await ExportAsync(); };
-            U<DataGrid>("FilesGrid").SelectionChanged += delegate { UpdateSelection(); };
+            U<DataGrid>("FilesGrid").SelectionChanged += delegate { if (!restoringSelection) UpdateSelection(); };
             U<DataGrid>("FilesGrid").MouseDoubleClick += (s, e) => { var row = Selected().FirstOrDefault(); var cell = FindParent<DataGridRow>(e.OriginalSource as DependencyObject); if (row != null && cell != null && row.Entry.IsDirectory) Navigate(row.Entry); };
             U<DataGrid>("FilesGrid").PreviewKeyDown += async (s, e) => {
                 if (e.Key == Key.Enter) { var row = Selected().FirstOrDefault(); if (row != null && row.Entry.IsDirectory) Navigate(row.Entry); e.Handled = true; }
@@ -93,8 +93,8 @@ namespace Spacio
             U<Canvas>("SpaceMap").SizeChanged += delegate { DrawMap(); };
             Window.Closing += (s, e) => {
                 if (savingScan) { closeAfterSave = true; e.Cancel = true; return; }
-                if (busy && scanCancel == null) { e.Cancel = true; return; }
-                closing = true; StopUpdates(); if (scanCancel != null) scanCancel.Cancel(); if (queryCancel != null) queryCancel.Cancel();
+                if (busy && scanCancel == null && !refreshing) { e.Cancel = true; return; }
+                closing = true; StopUpdates(); StopLiveUpdates(); if (scanCancel != null) scanCancel.Cancel(); if (queryCancel != null) queryCancel.Cancel();
             };
             Window.Loaded += delegate { DrawMap(); };
             U<TextBox>("PathBox").Text = System.IO.Path.GetPathRoot(Environment.GetFolderPath(Environment.SpecialFolder.Windows));
@@ -111,8 +111,8 @@ namespace Spacio
             Window.Title = L.Persian ? "اسپاسیو — کاوشگر فضا" : "Spacio — Storage Explorer";
             Localize(Window);
             U<Button>("LanguageButton").Content = L.Persian ? "English  ⇄" : "فارسی  ⇄";
-            U<Button>("ScanButton").ToolTip = L.T("نتیجهٔ قبلی باز می‌شود؛ فقط مسیر جدید اسکن می‌شود.");
-            U<Button>("RescanButton").ToolTip = L.T("حذف‌ها، جابه‌جایی‌ها و تغییر حجم در مسیر بالا بررسی و نتیجهٔ ذخیره‌شده به‌روز می‌شود.");
+            U<Button>("ScanButton").ToolTip = L.T("نتیجهٔ ذخیره‌شده ابتدا باز می‌شود و تغییرات در پس‌زمینه بررسی می‌شوند.");
+            U<Button>("RescanButton").ToolTip = L.T("بررسی کامل نتیجهٔ بازشده در پس‌زمینه؛ جدول هنگام بررسی باقی می‌ماند.");
             Populate("SizeFilter", new [] { "همهٔ اندازه‌ها", "بیشتر از ۱۰ MiB", "بیشتر از ۱۰۰ MiB", "بیشتر از ۱ GiB" });
             Populate("AgeFilter", new [] { "همهٔ تاریخ‌ها", "قدیمی‌تر از ۳۰ روز", "قدیمی‌تر از ۹۰ روز", "قدیمی‌تر از ۱۸۰ روز", "قدیمی‌تر از یک سال" });
             Populate("SortFilter", new [] { "حجم: بزرگ به کوچک", "تاریخ: جدید به قدیم", "تاریخ: قدیم به جدید", "نام: الفبا" });
@@ -131,6 +131,7 @@ namespace Spacio
             if (snapshot == null) SetStatus(L.T("آمادهٔ اسکن"));
             else SetStatus(L.T(stale ? "داده‌ها تغییر کرده‌اند؛ دوباره اسکن کنید" : snapshot.Cancelled ? "اسکن متوقف شد؛ نتیجه ناقص است" : viewingCached ? "نتیجهٔ قبلی بدون اسکن دوباره باز شد" : cacheSaved ? "اسکن کامل و ذخیره شد" : "اسکن کامل شد"));
             UpdateLabels();
+            if (liveEnabled) SetLiveState(liveState ?? "زنده · تغییرات خودکار دنبال می‌شوند");
         }
         private void Localize(DependencyObject node)
         {
@@ -158,18 +159,43 @@ namespace Spacio
                 if (dialog.ShowDialog(new Win32Owner(new WindowInteropHelper(Window).Handle)) == System.Windows.Forms.DialogResult.OK) U<TextBox>("PathBox").Text = dialog.SelectedPath;
             }
         }
-        private void RefreshDrives()
+        private async void RefreshDrives()
         {
+            if (driveRefreshRunning || closing) return;
+            driveRefreshRunning = true;
+            List<Tuple<string, string, long, long, long>> drives;
+            try
+            {
+                drives = await Task.Run(() => {
+                    var result = new List<Tuple<string, string, long, long, long>>();
+                    foreach (var drive in DriveInfo.GetDrives())
+                    {
+                        try
+                        {
+                            if ((drive.DriveType != DriveType.Fixed && drive.DriveType != DriveType.Removable) || !drive.IsReady) continue;
+                            result.Add(Tuple.Create(drive.Name, drive.VolumeLabel, drive.TotalSize, drive.TotalFreeSpace, drive.AvailableFreeSpace));
+                        }
+                        catch (IOException) { } catch (UnauthorizedAccessException) { }
+                    }
+                    return result;
+                });
+            }
+            catch (IOException) { return; } catch (UnauthorizedAccessException) { return; }
+            finally { driveRefreshRunning = false; lastDriveRefresh = DateTime.UtcNow; }
+            await Window.Dispatcher.InvokeAsync(() => RenderDrives(drives));
+        }
+        private void RenderDrives(List<Tuple<string, string, long, long, long>> drives)
+        {
+            if (closing) return;
             var panel = U<StackPanel>("DriveList"); panel.Children.Clear();
-            foreach (var drive in DriveInfo.GetDrives())
+            foreach (var drive in drives)
             {
                 try
                 {
-                    if (!drive.IsReady || (drive.DriveType != DriveType.Fixed && drive.DriveType != DriveType.Removable)) continue;
-                    string root = drive.Name;
-                    var label = new TextBlock { Text = root.TrimEnd('\\') + "   " + drive.VolumeLabel, FontSize = 12, FontWeight = FontWeights.SemiBold, FlowDirection = FlowDirection.LeftToRight, TextTrimming = TextTrimming.CharacterEllipsis };
-                    var bar = new ProgressBar { Height = 4, Maximum = 100, Value = drive.TotalSize == 0 ? 0 : 100.0 * (drive.TotalSize - drive.TotalFreeSpace) / drive.TotalSize, Background = B("#303C44"), Foreground = B("#76CDB7"), BorderThickness = new Thickness(0), Margin = new Thickness(0, 11, 0, 7), FlowDirection = FlowDirection.LeftToRight };
-                    var caption = new TextBlock { Text = (L.Persian ? "آزاد:  " : "Free:  ") + "\u200e" + Formats.Size(drive.AvailableFreeSpace) + " / " + Formats.Size(drive.TotalSize) + "\u200e", FontSize = 10, Foreground = B("#91A6B2"), FlowDirection = L.Persian ? FlowDirection.RightToLeft : FlowDirection.LeftToRight };
+                    string root = drive.Item1;
+                    var label = new TextBlock { Text = root.TrimEnd('\\') + "   " + drive.Item2, FontSize = 12, FontWeight = FontWeights.SemiBold, FlowDirection = FlowDirection.LeftToRight, TextTrimming = TextTrimming.CharacterEllipsis };
+                    var bar = new ProgressBar { Height = 4, Maximum = 100, Value = drive.Item3 == 0 ? 0 : 100.0 * (drive.Item3 - drive.Item4) / drive.Item3, Background = B("#303C44"), Foreground = B("#76CDB7"), BorderThickness = new Thickness(0), Margin = new Thickness(0, 11, 0, 7), FlowDirection = FlowDirection.LeftToRight };
+                    var caption = new TextBlock { Text = (L.Persian ? "آزاد:  " : "Free:  ") + "\u200e" + Formats.Size(drive.Item5) + " / " + Formats.Size(drive.Item3) + "\u200e", FontSize = 10, Foreground = B("#91A6B2"), FlowDirection = L.Persian ? FlowDirection.RightToLeft : FlowDirection.LeftToRight };
                     var stack = new StackPanel(); stack.Children.Add(label); stack.Children.Add(bar); stack.Children.Add(caption);
                     var button = new Button { Content = stack, Background = B("#1E2931"), Padding = new Thickness(12), Margin = new Thickness(0, 0, 0, 9), HorizontalContentAlignment = HorizontalAlignment.Stretch, ToolTip = L.T("باز کردن / اسکن") + " " + root, IsEnabled = !busy };
                     // Default button template centers content; give drive cards a stable content width.
@@ -197,14 +223,23 @@ namespace Spacio
             string path = await Task.Run(() => cache.LastPath());
             if (!String.IsNullOrEmpty(path)) { U<TextBox>("PathBox").Text = path; await ScanAsync(path, false, true); }
         }
-        private void RememberLastPath(string path)
+        private readonly SemaphoreSlim sessionWrite = new SemaphoreSlim(1, 1);
+        private async Task SaveLastPathAsync(string path)
         {
-            try { cache.SaveLastPath(path); }
+            await sessionWrite.WaitAsync();
+            try { await Task.Run(() => cache.SaveLastPath(path)); }
             catch (IOException) { } catch (UnauthorizedAccessException) { }
+            finally { sessionWrite.Release(); }
         }
+        private async void RememberLastPath(string path) { await SaveLastPathAsync(path); }
         public async Task ScanAsync(string path, bool forceRescan = false, bool savedOnly = false)
         {
             if (busy) return;
+            if (forceRescan && snapshot != null && !snapshot.Cancelled && Paths.Within(path, snapshot.Root.Path))
+            {
+                await RefreshSnapshotAsync(true); return;
+            }
+            if (liveMonitor != null) { liveMonitor.Dispose(); liveMonitor = null; }
             searchTimer.Stop(); if (queryCancel != null) queryCancel.Cancel(); queryVersion++;
             scanCancel = new CancellationTokenSource();
             if (snapshot != null) cache.Remember(snapshot);
@@ -224,7 +259,7 @@ namespace Spacio
                     snapshot = saved.Snapshot; current = saved.Directory; stale = snapshot.IsStale; viewingCached = true;
                     U<TextBox>("PathBox").Text = current.Path; U<TextBox>("SearchBox").Text = "";
                     SetStatus(L.T("نتیجهٔ قبلی بدون اسکن دوباره باز شد"));
-                    RememberLastPath(current.Path);
+                    await SaveLastPathAsync(current.Path);
                     UpdateMetrics(); BuildMap(); await RefreshRowsAsync();
                     return;
                 }
@@ -235,6 +270,16 @@ namespace Spacio
                     return;
                 }
                 SetStatus(L.T("در حال اسکن…")); U<TextBlock>("EmptyTitle").Text = L.T("در حال اسکن…");
+                if (liveEnabled)
+                {
+                    try
+                    {
+                        liveMonitor = await Task.Run(() => { Paths.RequireLocal(Paths.Normalize(path)); Paths.CheckAncestors(path); return CreateLiveMonitor(path); }, token);
+                        if (closing) { liveMonitor.Dispose(); liveMonitor = null; return; }
+                        lastFullCheck = DateTime.UtcNow;
+                    }
+                    catch (IOException) { } catch (UnauthorizedAccessException) { } catch (ArgumentException) { }
+                }
                 bool scanning = true;
                 var progress = new Progress<ScanProgress>(p => {
                     if (closing || !busy || !scanning) return;
@@ -246,6 +291,7 @@ namespace Spacio
                 var scanned = await Task.Run(() => new Scanner().Scan(path, token, p => ((IProgress<ScanProgress>)progress).Report(p)));
                 scanning = false;
                 if (closing) return;
+                if (!scanned.Cancelled) lastFullCheck = DateTime.UtcNow;
                 snapshot = scanned; current = snapshot.Root;
                 savingScan = !snapshot.Cancelled;
                 U<TextBox>("PathBox").Text = current.Path;
@@ -259,7 +305,7 @@ namespace Spacio
                     try
                     {
                         await Task.Run(() => cache.Save(scanned, token), token);
-                        cacheSaved = true; RememberLastPath(current.Path); SetStatus(L.T("اسکن کامل و ذخیره شد"));
+                        cacheSaved = true; await SaveLastPathAsync(current.Path); SetStatus(L.T("اسکن کامل و ذخیره شد"));
                     }
                     catch (OperationCanceledException) { SetStatus(L.T("نتیجه فقط تا بستن برنامه نگه داشته می‌شود")); }
                     catch (Exception e)
@@ -276,7 +322,7 @@ namespace Spacio
             {
                 savingScan = false;
                 scanCancel.Dispose(); scanCancel = null;
-                if (!closing) { SetBusy(false, false); UpdateSelection(); if (forceRescan && cacheSaved) RefreshDrives(); }
+                if (!closing) { SetBusy(false, false); UpdateSelection(); if (forceRescan && cacheSaved) RefreshDrives(); AttachLive(viewingCached); }
                 if (closeAfterSave) Window.Close();
             }
         }
@@ -290,7 +336,7 @@ namespace Spacio
             U<TextBlock>("ScopeMetric").Text = snapshot == null ? "" : snapshot.Root.Path;
             string label = snapshot == null ? "" : L.T(snapshot.Cancelled ? "اسکن متوقف شد؛ نتیجه ناقص است" : stale ? "داده‌ها تغییر کرده‌اند؛ دوباره اسکن کنید" : viewingCached ? "نتیجهٔ ذخیره‌شده" : cacheSaved ? "اسکن کامل و ذخیره شد" : "نتیجهٔ اسکن فعلی") + "  ·  " + snapshot.StartedUtc.ToLocalTime().ToString("yyyy/MM/dd HH:mm", CultureInfo.InvariantCulture);
             U<TextBlock>("SnapshotInfo").Text = label;
-            U<TextBlock>("SnapshotInfo").ToolTip = L.T("این اطلاعات مربوط به زمان اسکن است. برای دیدن تغییرات جدید «تازه‌سازی» را بزنید.");
+            U<TextBlock>("SnapshotInfo").ToolTip = L.T("نتیجهٔ ذخیره‌شده ابتدا باز می‌شود و تغییرات در پس‌زمینه بررسی می‌شوند.");
         }
         private void SetMode(int next)
         {
@@ -299,9 +345,16 @@ namespace Spacio
             U<TextBlock>("ListTitle").Text = L.T(titles[mode]);
             BuildCategoryButtons(); BuildMap(); RefreshRows();
         }
-        private void Navigate(Entry entry)
+        private async void Navigate(Entry entry)
         {
             if (entry == null || !entry.IsDirectory) return;
+            var root = entry; while (root.Parent != null) root = root.Parent;
+            if (snapshot != null && !Object.ReferenceEquals(root, snapshot.Root))
+            {
+                var basis = snapshot; string path = entry.Path;
+                entry = await Task.Run(() => basis.Entries.FirstOrDefault(e => e.IsDirectory && String.Equals(e.Path, path, StringComparison.OrdinalIgnoreCase)));
+                if (closing || basis != snapshot || entry == null) return;
+            }
             current = entry; U<TextBox>("SearchBox").Text = ""; category = null;
             if (!snapshot.Cancelled && (cacheSaved || viewingCached)) RememberLastPath(entry.Path);
             SetMode(0);
@@ -342,7 +395,7 @@ namespace Spacio
             U<TextBlock>("Breadcrumb").Text = current.Path;
             U<TextBlock>("Breadcrumb").ToolTip = current.Path;
             U<TextBlock>("ResultCount").Text = L.T("در حال آماده‌سازی فهرست…");
-            U<DataGrid>("FilesGrid").ItemsSource = null; filtered = new List<Entry>();
+            var selectedPaths = new HashSet<string>(Selected().Select(r => r.Entry.Path), StringComparer.OrdinalIgnoreCase);
             try
             {
                 var result = await Task.Run(() => {
@@ -359,25 +412,33 @@ namespace Spacio
                     else if (order == 2) ordered = source.OrderBy(e => e.LatestUtc);
                     else if (order == 3) ordered = source.OrderBy(e => e.Name, StringComparer.CurrentCultureIgnoreCase);
                     else ordered = source.OrderByDescending(e => e.Bytes);
-                    return ordered.ThenBy(e => e.Path, StringComparer.OrdinalIgnoreCase).ToList();
+                    var entries = ordered.ThenBy(e => e.Path, StringComparer.OrdinalIgnoreCase).ToList();
+                    var prepared = entries.Take(2000).Select((e, i) => { token.ThrowIfCancellationRequested(); return MakeRow(e, i, capturedSnapshot, capturedCurrent); }).ToList();
+                    return Tuple.Create(entries, prepared);
                 }, token);
                 if (version != queryVersion || closing) return;
-                filtered = result;
-                var rows = result.Take(2000).Select((e, i) => MakeRow(e, i)).ToList();
-                U<DataGrid>("FilesGrid").ItemsSource = rows;
+                filtered = result.Item1;
+                var rows = result.Item2;
+                restoringSelection = true;
+                try
+                {
+                    U<DataGrid>("FilesGrid").ItemsSource = rows;
+                    foreach (var row in rows) if (selectedPaths.Contains(row.Entry.Path)) U<DataGrid>("FilesGrid").SelectedItems.Add(row);
+                }
+                finally { restoringSelection = false; }
                 U<StackPanel>("EmptyState").Visibility = rows.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
                 U<TextBlock>("EmptyTitle").Text = L.T("موردی با این فیلترها پیدا نشد"); U<TextBlock>("EmptyHint").Text = "";
-                U<TextBlock>("ResultCount").Text = L.T("نمایش") + " " + rows.Count.ToString("N0") + " / " + result.Count.ToString("N0") + " " + L.T("نتایج") + (result.Count > 2000 ? "  ·  " + L.T("خروجی CSV") + ": " + result.Count.ToString("N0") : "");
-                U<Button>("ExportButton").IsEnabled = !busy && result.Count > 0;
+                U<TextBlock>("ResultCount").Text = L.T("نمایش") + " " + rows.Count.ToString("N0") + " / " + filtered.Count.ToString("N0") + " " + L.T("نتایج") + (filtered.Count > 2000 ? "  ·  " + L.T("خروجی CSV") + ": " + filtered.Count.ToString("N0") : "");
+                U<Button>("ExportButton").IsEnabled = !busy && filtered.Count > 0;
                 UpdateSelection();
             }
             catch (OperationCanceledException) { }
             catch (Exception e) { if (version == queryVersion) Error(e); }
         }
-        private Row MakeRow(Entry entry, int i)
+        private Row MakeRow(Entry entry, int i, Snapshot data, Entry directory)
         {
-            string reason = Safety.BlockReason(entry, snapshot);
-            return new Row { Entry = entry, Percent = current.Bytes == 0 ? 0 : 100.0 * entry.Bytes / current.Bytes,
+            string reason = Safety.BlockReason(entry, data);
+            return new Row { Entry = entry, Percent = directory.Bytes == 0 ? 0 : 100.0 * entry.Bytes / directory.Bytes,
                 Color = B(entry.IsDirectory ? "#7ED6B8" : palette[i % palette.Length]),
                 State = L.T(entry.Issues > 0 ? "ناقص" : reason != null ? "محافظت‌شده" : "قابل بررسی"),
                 Detail = entry.Path + "\n" + L.T("زمان ایجاد") + ": " + Formats.Date(entry.CreatedUtc) + "   ·   " + L.T("زمان تغییر") + ": " + Formats.Date(entry.ModifiedUtc) + "\n" + L.T(reason ?? entry.Note) };
@@ -392,8 +453,10 @@ namespace Spacio
             U<Button>("RecycleButton").ToolTip = stale ? L.T("داده‌ها تغییر کرده‌اند؛ دوباره اسکن کنید") : L.T(reason);
             U<TextBlock>("SelectionInfo").Text = selected.Count == 0 ? L.T("انتخابی ندارید") : selected.Count.ToString("N0") + " " + L.T("انتخاب‌شده") + "  ·  " + Formats.Size(selected.Sum(x => x.Bytes)) + (reason == null ? "" : "  ·  " + L.T(reason));
         }
-        private void BuildMap()
+        private int mapVersion;
+        private async void BuildMap()
         {
+            int version = ++mapVersion;
             tiles.Clear();
             U<TextBlock>("MapTitle").Text = L.T(mode == 3 ? "نوع فایل‌ها" : "نقشهٔ فضا");
             U<TextBlock>("MapHint").Text = L.T(mode == 3 ? "گروه را برای دیدن فایل‌هایش انتخاب کنید" : "برای ورود، روی پوشه کلیک کنید");
@@ -405,7 +468,9 @@ namespace Spacio
                 }
                 else
                 {
-                    var children = current.Children.Where(e => e.Bytes > 0).OrderByDescending(e => e.Bytes).ToList();
+                    var captured = current;
+                    var children = await Task.Run(() => captured.Children.Where(e => e.Bytes > 0).OrderByDescending(e => e.Bytes).ToList());
+                    if (version != mapVersion || closing) return;
                     tiles = children.Take(12).Select(e => new Tile { Label = e.Name, Entry = e, Bytes = e.Bytes }).ToList();
                     if (children.Count > 12) tiles.Add(new Tile { Label = L.T("سایر"), Bytes = children.Skip(12).Sum(e => e.Bytes) });
                 }
@@ -460,7 +525,11 @@ namespace Spacio
             var entries = Safety.CollapseSelection(Selected().Select(r => r.Entry)); if (entries.Count == 0) return;
             foreach (var entry in entries) { var reason = Safety.BlockReason(entry, snapshot); if (reason != null) { Error(new InvalidOperationException(reason)); return; } }
             string body = L.T("موارد زیر به سطل بازیافت منتقل می‌شوند:") + "\n\n" + String.Join("\n\n", entries.Select(e => e.Path + "\n" + Formats.Size(e.Bytes))) + "\n\n" + L.T("فضا پس از خالی کردن سطل بازیافت در ویندوز آزاد می‌شود. از همان‌جا می‌توانید فایل‌ها را بازیابی کنید.");
-            if (!ShowDialogText("مرور انتخاب‌ها", body, true)) return;
+            reviewingCleanup = true;
+            bool confirmed;
+            try { confirmed = ShowDialogText("مرور انتخاب‌ها", body, true); }
+            finally { reviewingCleanup = false; }
+            if (!confirmed) return;
             SetBusy(true, false); SetStatus(L.T("در حال بررسی تغییرات و انتقال…"));
             try
             {
@@ -471,7 +540,8 @@ namespace Spacio
                 await Task.Run(() => cache.MarkChanged(entries.Select(e => e.Path)));
                 UpdateMetrics();
                 var report = await Recycler.RecycleAsync(entries, approved, new WindowInteropHelper(Window).Handle, CancellationToken.None);
-                ShowDialogText("انجام شد", String.Join("\n\n", report) + "\n\n" + L.T("انتقال تمام شد. برای به‌روزرسانی نتیجه دوباره اسکن کنید."), false);
+                if (liveMonitor != null) liveMonitor.RequireFull();
+                ShowDialogText("انجام شد", String.Join("\n\n", report) + "\n\n" + L.T("انتقال تمام شد؛ نتیجه به‌صورت خودکار به‌روز می‌شود."), false);
                 SetStatus(L.T("داده‌ها تغییر کرده‌اند؛ دوباره اسکن کنید")); RefreshDrives();
             }
             catch (Exception e) { Error(e); }
@@ -543,7 +613,7 @@ namespace Spacio
                 if (!viewingCached || current != child || snapshot != completed) throw new Exception("Cached descendant was rescanned.");
             }
             await ScanAsync(completed.Root.Path, true);
-            if (viewingCached || Object.ReferenceEquals(completed, snapshot) || !cacheSaved) throw new Exception("Explicit rescan did not replace and save the snapshot.");
+            if (snapshot.Cancelled || snapshot.Root.Bytes != completed.Root.Bytes) throw new Exception("Explicit refresh did not preserve a complete unchanged snapshot.");
             await ScanAsync(completed.Root.Path);
             string deleted = Path.Combine(completed.Root.Path, "spacio-refresh-delete.tmp"), moved = Path.Combine(completed.Root.Path, "spacio-refresh-move.tmp"), destination = moved + ".moved", added = deleted + ".added";
             File.WriteAllText(deleted, "delete fixture"); File.WriteAllText(moved, "move fixture");
@@ -583,6 +653,7 @@ namespace Spacio
             }
             if (args.Length > 0 && args[0] == "--self-test") return SelfTests.Run(args.Length > 1 ? args[1] : System.IO.Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "test-results.txt"));
             if (args.Length > 1 && args[0] == "--cache-test") return CacheTests.Run(args[1]);
+            if (args.Length > 1 && args[0] == "--live-test") return LiveTests.Run(args[1]);
             bool startupTest = args.Length >= 3 && args[0] == "--startup-smoke";
             bool preview = startupTest || (args.Length >= 3 && args[0] == "--ui-smoke");
             if (!preview) L.Load();

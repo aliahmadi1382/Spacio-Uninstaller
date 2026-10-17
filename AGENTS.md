@@ -46,7 +46,11 @@ The user explicitly requires scans to survive application updates. Keep their
 storage independent of the executable/version directory. Updates must not remove
 or overwrite `%LOCALAPPDATA%\Spacio\Scans`, preferences, or scanned user files.
 Keep existing cache formats readable. If a future format change requires a
-migration, preserve the original data until a complete replacement is verified;
-never substitute an automatic rescan for a saved result. Verify upgrades with
+migration, preserve the original data until a complete replacement is verified.
+Open the saved result first, then reconcile filesystem changes in the background
+at startup and monitor the open scan live, as requested by the user. Never clear
+the displayed result or overwrite a good cache with a cancelled/failed refresh.
+Unchanged validation must retain the original scan timestamp and cache bytes.
+Verify upgrades with
 `tools/verify-upgrade.ps1`, which checks cache bytes, the original scan timestamp,
 user-file contents, and restoration in the newly installed app.

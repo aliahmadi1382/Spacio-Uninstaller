@@ -130,9 +130,10 @@ namespace Spacio
             return snapshot;
         }
 
-        private static Entry ReadEntry(FileSystemInfo info, Entry parent)
+        internal static Entry ReadEntry(FileSystemInfo info, Entry parent)
         {
-            info.Refresh();
+            // EnumerateFileSystemInfos already supplies metadata. Refreshing each item forces
+            // a second disk query per file on large drives. Standalone callers use new infos.
             if (!info.Exists) throw new IOException("مورد در حین اسکن جابه‌جا شده است.");
             var attr = info.Attributes;
             var folder = (attr & FileAttributes.Directory) != 0;

@@ -13,6 +13,11 @@ $cacheReport = Join-Path $artifactPath 'cache-tests.txt'
 $cacheProcess = Start-Process -FilePath $exePath -ArgumentList @('--cache-test', ('"' + $cacheReport + '"')) -WindowStyle Hidden -PassThru -Wait
 Get-Content -LiteralPath $cacheReport
 if ($cacheProcess.ExitCode -ne 0) { throw 'Cache checks failed.' }
+$liveReport = Join-Path $artifactPath 'live-tests.txt'
+$liveProcess = Start-Process -FilePath $exePath -ArgumentList @('--live-test', ('"' + $liveReport + '"')) -WindowStyle Hidden -PassThru
+if (-not $liveProcess.WaitForExit(120000)) { throw 'Live checks exceeded 120 seconds.' }
+Get-Content -LiteralPath $liveReport
+if ($liveProcess.ExitCode -ne 0) { throw 'Live checks failed.' }
 $updateReport = Join-Path $artifactPath 'update-tests.txt'
 $updateProcess = Start-Process -FilePath $exePath -ArgumentList @('--update-test', ('"' + $updateReport + '"')) -WindowStyle Hidden -PassThru
 if (-not $updateProcess.WaitForExit(60000)) { throw 'Update checks exceeded 60 seconds.' }

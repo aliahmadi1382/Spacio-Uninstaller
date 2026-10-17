@@ -21,6 +21,7 @@ namespace Spacio
         private const int Magic = 0x53504332, Version = 1, EndMarker = 0x454E4432;
         private readonly string folder;
         private readonly List<Snapshot> memory = new List<Snapshot>();
+        public string DirectoryPath { get { return folder; } }
         public SnapshotCache(string directory = null)
         {
             folder = directory ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Spacio", "Scans");
@@ -137,7 +138,7 @@ namespace Spacio
         public void Save(Snapshot data, CancellationToken cancel)
         {
             if (data.Cancelled) return; // Never replace a complete result with a cancelled scan.
-            Remember(data); Directory.CreateDirectory(folder);
+            Directory.CreateDirectory(folder);
             string target = FileFor(data.Root.Path), temporary = target + "." + Guid.NewGuid().ToString("N") + ".tmp";
             try
             {
@@ -174,6 +175,7 @@ namespace Spacio
                 }
                 cancel.ThrowIfCancellationRequested();
                 CommitFile(temporary, target, cancel);
+                Remember(data);
             }
             finally { if (File.Exists(temporary)) File.Delete(temporary); }
         }

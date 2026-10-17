@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.4.0
+
+- Keep the existing table, navigation, filters and map available during Refresh; perform drive queries, result preparation and persistence on workers.
+- Restore saved scans first, then automatically reconcile changes made while the app was closed.
+- Monitor the open scan for creates, deletes, renames, size/date and attribute changes; batch notifications and read affected paths instead of rescanning the whole drive for ordinary events.
+- Add Persian/English live status and refresh drive free-space cards every ten seconds. Validate in the background on startup, Refresh, notification overflow and every five minutes as a recovery check.
+- Build replacement trees independently and atomically save them; cancellation, unavailable roots and failed writes retain the last good snapshot. Preserve previously known contents of newly inaccessible paths and mark them incomplete.
+- Keep the existing cache format, upgrade restoration and unchanged scan timestamps; exclude Spacio cache/update writes from notification feedback.
+- Avoid redundant metadata queries during directory enumeration. Verify real filesystem notifications, off-time changes, incremental totals, queue overflow, cancellation, saved bytes and UI responsiveness during a blocked cache write.
+
 ## 1.3.2
 
 - Replace the subtle startup effect with continuous rotating rings, a floating leaf logo, moving green light, drifting particles, and a light sweep.

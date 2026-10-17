@@ -65,7 +65,7 @@ namespace Spacio
                         File.WriteAllText(previewPrefix + ".startup.ok.txt", "PASS: actual loading-screen startup restores the last saved scan before showing the main window");
                         controller.Window.Close();
                     }
-                    else controller.StartUpdateChecks();
+                    else { controller.StartLiveUpdates(); controller.StartUpdateChecks(); }
                 }
                 catch (Exception e) { if (previewPrefix != null) File.WriteAllText(previewPrefix + ".error.txt", e.ToString()); else MessageBox.Show(L.T(e.Message), "Spacio", MessageBoxButton.OK, MessageBoxImage.Error); splash.Close(); app.Shutdown(1); }
             };
