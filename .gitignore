@@ -1,0 +1,16 @@
+# Generated builds and disposable scan/test fixtures
+dist/
+.test-data/
+artifacts/
+
+# Local IDE settings and credentials
+*.user
+*.suo
+.vs/
+.env
+.env.*
+!.env.example
+
+# Locally saved scan data
+*.scan
+*.scan.changed

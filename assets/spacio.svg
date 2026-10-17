@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 96 96" role="img" aria-labelledby="title desc">
+ <title id="title">Spacio</title>
+ <desc id="desc">A green leaf divided into three storage-map blocks on a dark forest-green tile.</desc>
+ <defs>
+  <linearGradient id="tile" x2="1" y2="1"><stop stop-color="#174d33"/><stop offset="1" stop-color="#09291d"/></linearGradient>
+  <clipPath id="leaf"><path d="M22 67C12 47 23 24 44 19C56 16 70 17 78 14C83 37 78 57 61 69C48 78 32 78 22 67Z"/></clipPath>
+ </defs>
+ <rect x="4" y="4" width="88" height="88" rx="24" fill="url(#tile)"/>
+ <path d="M17 79L30 65" fill="none" stroke="#64eea2" stroke-width="4" stroke-linecap="round"/>
+ <g clip-path="url(#leaf)">
+  <path d="M12 12H43V81H12Z" fill="#64eea2"/>
+  <path d="M48 12H85V40H48Z" fill="#2bd77e"/>
+  <path d="M48 45H85V81H48Z" fill="#16af60"/>
+ </g>
+</svg>
