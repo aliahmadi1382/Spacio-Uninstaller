@@ -9,7 +9,7 @@
    <Setter Property="Padding" Value="14,9"/><Setter Property="Cursor" Value="Hand"/><Setter Property="VerticalContentAlignment" Value="Center"/>
    <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="Button"><Border x:Name="Surface" Background="{TemplateBinding Background}" CornerRadius="7" Padding="{TemplateBinding Padding}"><ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/></Border><ControlTemplate.Triggers><Trigger Property="IsMouseOver" Value="True"><Setter TargetName="Surface" Property="Opacity" Value="0.78"/></Trigger><Trigger Property="IsEnabled" Value="False"><Setter TargetName="Surface" Property="Opacity" Value="0.35"/></Trigger></ControlTemplate.Triggers></ControlTemplate></Setter.Value></Setter>
   </Style>
-  <Style x:Key="Nav" TargetType="Button" BasedOn="{StaticResource {x:Type Button}}"><Setter Property="HorizontalContentAlignment" Value="Stretch"/><Setter Property="Margin" Value="0,3"/><Setter Property="Padding" Value="14,13"/><Setter Property="Background" Value="Transparent"/></Style>
+  <Style x:Key="Nav" TargetType="Button" BasedOn="{StaticResource {x:Type Button}}"><Setter Property="HorizontalContentAlignment" Value="Stretch"/><Setter Property="Margin" Value="0,3"/><Setter Property="Padding" Value="14,10"/><Setter Property="Background" Value="Transparent"/></Style>
   <Style TargetType="TextBox"><Setter Property="Background" Value="#171E24"/><Setter Property="Foreground" Value="#E5ECF0"/><Setter Property="CaretBrush" Value="#63DFC4"/><Setter Property="BorderBrush" Value="#303C45"/><Setter Property="BorderThickness" Value="1"/><Setter Property="Padding" Value="11,8"/><Setter Property="VerticalContentAlignment" Value="Center"/><Setter Property="SelectionBrush" Value="#286F62"/></Style>
   <Style TargetType="ComboBox">
    <Setter Property="Foreground" Value="#D9E2E8"/><Setter Property="Background" Value="#202930"/><Setter Property="Padding" Value="9,7"/>
@@ -35,33 +35,38 @@
   </Border>
   <Border Grid.Row="1" Grid.Column="0" Background="#151C22" BorderBrush="#29333B" BorderThickness="0,0,1,0">
    <Grid Margin="16,22,16,16">
-    <Grid.RowDefinitions><RowDefinition Height="80"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+    <Grid.RowDefinitions><RowDefinition Height="68"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
     <StackPanel>
      <StackPanel Orientation="Horizontal" FlowDirection="LeftToRight" HorizontalAlignment="Center"><Image x:Name="BrandLogo" Width="42" Height="42" Margin="0,0,8,0"/><TextBlock Tag="اسپاسیو" FontSize="26" FontWeight="SemiBold"/></StackPanel>
      <TextBlock Tag="تحلیل فضای ذخیره‌سازی" FontSize="9" Foreground="#778B97" HorizontalAlignment="Center" Margin="0,10,0,0"/>
     </StackPanel>
     <StackPanel Grid.Row="1">
      <Button x:Name="OverviewNav" Style="{StaticResource Nav}"><TextBlock Tag="نمای کلی"/></Button>
+     <Button x:Name="FilesNav" Style="{StaticResource Nav}"><TextBlock Tag="پوشه‌ها و فایل‌ها"/></Button>
      <Button x:Name="LargestNav" Style="{StaticResource Nav}"><TextBlock Tag="فایل‌های بزرگ"/></Button>
      <Button x:Name="OldNav" Style="{StaticResource Nav}"><TextBlock Tag="فایل‌های قدیمی"/></Button>
      <Button x:Name="TypesNav" Style="{StaticResource Nav}"><TextBlock Tag="نوع فایل‌ها"/></Button>
-     <Border Height="1" Background="#2A343C" Margin="4,18"/>
+     <Border Height="1" Background="#2A343C" Margin="4,12"/>
      <TextBlock Tag="درایوهای شما" FontSize="10" Foreground="#7F939F" Margin="10,0,0,12"/>
     </StackPanel>
-    <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto"><StackPanel x:Name="DriveList"/></ScrollViewer>
+    <ScrollViewer x:Name="DriveScroller" Grid.Row="2" VerticalScrollBarVisibility="Auto"><StackPanel x:Name="DriveList"/></ScrollViewer>
     <StackPanel Grid.Row="3">
      <TextBlock Tag="ابزارهای ویندوز" FontSize="10" Foreground="#7F939F" Margin="10,15,0,5"/>
      <Button x:Name="AppsButton" Style="{StaticResource Nav}"><TextBlock Tag="برنامه‌های نصب‌شده"/></Button>
      <Button x:Name="BinButton" Style="{StaticResource Nav}"><TextBlock Tag="سطل بازیافت"/></Button>
-     <Border Background="#1C2D2B" CornerRadius="9" Padding="13" Margin="0,15,0,0"><StackPanel><TextBlock Tag="اسکن فقط خواندنی است" Foreground="#83D8BF" FontWeight="SemiBold" FontSize="12"/><TextBlock Tag="هیچ فایلی هنگام اسکن تغییر نمی‌کند. پاک‌سازی فقط با انتخاب و تأیید شما انجام می‌شود." Foreground="#A2B6B1" FontSize="11" TextWrapping="Wrap" LineHeight="20" Margin="0,8,0,0"/></StackPanel></Border>
+     <Border x:Name="ReadOnlyNote" Background="#1C2D2B" CornerRadius="9" Padding="13" Margin="0,15,0,0"><TextBlock Tag="اسکن فقط خواندنی است" Foreground="#83D8BF" FontWeight="SemiBold" FontSize="12"/></Border>
      <Button x:Name="UpdateButton" Tag="بررسی آپدیت" Background="Transparent" Foreground="#85C6AE" FontSize="11" Margin="0,9,0,0" Padding="8,6"/>
      <TextBlock x:Name="VersionLabel" FontSize="9" Foreground="#5F7481" FlowDirection="LeftToRight" HorizontalAlignment="Center" Margin="0,5,0,0"/>
     </StackPanel>
    </Grid>
   </Border>
-  <Grid Grid.Row="1" Grid.Column="1" Margin="26,24,26,14">
+  <Grid x:Name="Workspace" Grid.Row="1" Grid.Column="1" Margin="26,24,26,14">
    <Grid.RowDefinitions><RowDefinition Height="76"/><RowDefinition Height="50"/><RowDefinition Height="121"/><RowDefinition Height="170"/><RowDefinition Height="*"/><RowDefinition Height="68"/></Grid.RowDefinitions>
-   <Grid Grid.Row="0"><StackPanel><TextBlock Tag="فضای دیسک، زیر ذره‌بین." FontSize="26" FontWeight="SemiBold"/><TextBlock Tag="یک نمای روشن از فایل‌ها، پوشه‌ها و فضای مصرف‌شده" Foreground="#8DA0AD" Margin="0,7,0,0" FontSize="12"/></StackPanel><Button x:Name="LanguageButton" Content="English  ⇄" HorizontalAlignment="Right" VerticalAlignment="Top" Background="#253039" Padding="13,9" FlowDirection="LeftToRight"/></Grid>
+   <Grid Grid.Row="0"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+    <StackPanel Margin="0,0,16,0"><TextBlock x:Name="PageTitle" FontSize="26" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"/><TextBlock x:Name="PageDescription" Foreground="#8DA0AD" Margin="0,7,0,0" FontSize="12" TextTrimming="CharacterEllipsis"/></StackPanel>
+    <Button x:Name="BackOverviewButton" Grid.Column="1" Tag="بازگشت به نمای کلی" VerticalAlignment="Top" Background="#203A32" Foreground="#8CE9CE" Padding="13,9" Margin="0,0,10,0" Visibility="Collapsed"/>
+    <Button x:Name="LanguageButton" Grid.Column="2" Content="English  ⇄" VerticalAlignment="Top" Background="#253039" Padding="13,9" FlowDirection="LeftToRight"/>
+   </Grid>
    <Grid Grid.Row="1" Margin="0,0,0,8"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
     <TextBox x:Name="PathBox" FlowDirection="LeftToRight" FontFamily="Consolas" FontSize="13"/>
     <Button x:Name="BrowseButton" Grid.Column="1" Tag="انتخاب پوشه" Margin="8,0,0,0"/>
@@ -69,25 +74,26 @@
     <Button x:Name="RescanButton" Grid.Column="3" Tag="تازه‌سازی ↻" Margin="8,0,0,0"/>
     <Button x:Name="StopButton" Grid.Column="4" Tag="توقف" Margin="8,0,0,0" Visibility="Collapsed"/>
    </Grid>
-   <UniformGrid Grid.Row="2" Columns="4" Margin="0,8,0,14">
+   <UniformGrid x:Name="OverviewMetrics" Grid.Row="2" Columns="4" Margin="0,8,0,14">
     <Border Style="{StaticResource Card}" Margin="0,0,8,0"><StackPanel><TextBlock Tag="حجم بررسی‌شده" FontSize="10" Foreground="#8B9DA8"/><TextBlock x:Name="BytesMetric" Text="—" FontSize="27" Foreground="#79E5C9" Margin="0,5,0,1" FlowDirection="LeftToRight"/><TextBlock Tag="حجم منطقی فایل‌ها" FontSize="10" Foreground="#708692"/></StackPanel></Border>
     <Border Style="{StaticResource Card}" Margin="0,0,8,0"><StackPanel><TextBlock Tag="فایل" FontSize="10" Foreground="#8B9DA8"/><TextBlock x:Name="FilesMetric" Text="—" FontSize="27" Margin="0,5,0,1"/><TextBlock x:Name="TimeMetric" Text="—" FontSize="10" Foreground="#708692"/></StackPanel></Border>
     <Border Style="{StaticResource Card}" Margin="0,0,8,0"><StackPanel><TextBlock Tag="پوشه‌های بررسی‌شده" FontSize="10" Foreground="#8B9DA8"/><TextBlock x:Name="FoldersMetric" Text="—" FontSize="27" Margin="0,5,0,1"/><TextBlock x:Name="ScopeMetric" FontSize="10" Foreground="#708692" TextTrimming="CharacterEllipsis" FlowDirection="LeftToRight"/></StackPanel></Border>
     <Border Style="{StaticResource Card}"><StackPanel><TextBlock Tag="موارد بررسی‌نشده" FontSize="10" Foreground="#8B9DA8"/><TextBlock x:Name="IssuesMetric" Text="—" FontSize="27" Margin="0,5,0,0" Foreground="#E5BD7F"/><Button x:Name="IssuesButton" Tag="مشاهدهٔ جزئیات" Background="Transparent" Foreground="#9AAEBB" Padding="0,2" FontSize="10" HorizontalAlignment="Left"/></StackPanel></Border>
    </UniformGrid>
-   <Border Grid.Row="3" Style="{StaticResource Card}" Padding="15,12" Margin="0,0,0,14">
+   <Border x:Name="OverviewMap" Grid.Row="3" Style="{StaticResource Card}" Padding="15,12" Margin="0,0,0,14">
     <Grid><Grid.RowDefinitions><RowDefinition Height="27"/><RowDefinition Height="*"/></Grid.RowDefinitions>
      <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions><TextBlock x:Name="MapTitle" Tag="نقشهٔ فضا" FontWeight="SemiBold"/><TextBlock x:Name="SnapshotInfo" Grid.Column="1" FontSize="10" Foreground="#85C6AE" Margin="14,0" TextTrimming="CharacterEllipsis"/><TextBlock x:Name="MapHint" Grid.Column="2" Tag="برای ورود، روی پوشه کلیک کنید" FontSize="10" Foreground="#8199A6" HorizontalAlignment="Right"/></Grid>
      <Canvas x:Name="SpaceMap" Grid.Row="1" Background="Transparent" ClipToBounds="True" FlowDirection="LeftToRight"/>
     </Grid>
    </Border>
-   <Border Grid.Row="4" Background="#161E24" BorderBrush="#2A363F" BorderThickness="1" CornerRadius="10" ClipToBounds="True">
+   <Border x:Name="ResultsPage" Grid.Row="4" Background="#161E24" BorderBrush="#2A363F" BorderThickness="1" CornerRadius="10" ClipToBounds="True">
     <Grid><Grid.RowDefinitions><RowDefinition Height="48"/><RowDefinition Height="48"/><RowDefinition Height="35"/><RowDefinition Height="*"/><RowDefinition Height="28"/></Grid.RowDefinitions>
-     <Grid Margin="13,0"><Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+     <Grid Margin="13,0"><Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
       <TextBlock x:Name="ListTitle" Tag="پوشه‌ها و فایل‌ها" FontWeight="SemiBold" Margin="0,0,12,0"/>
       <TextBlock x:Name="Breadcrumb" Grid.Column="1" Foreground="#91A9B8" TextTrimming="CharacterEllipsis" FlowDirection="LeftToRight" FontSize="11"/>
-      <Button x:Name="UpButton" Grid.Column="2" Tag="پوشهٔ بالاتر" Padding="10,6" Margin="9,0" VerticalAlignment="Center" FontSize="11"/>
-      <Button x:Name="ExportButton" Grid.Column="3" Tag="خروجی CSV" Padding="10,6" VerticalAlignment="Center" FontSize="11"/>
+      <Button x:Name="OpenResultsPageButton" Grid.Column="2" Tag="نمایش در صفحهٔ کامل" Padding="10,6" Margin="9,0,0,0" VerticalAlignment="Center" FontSize="11" Background="#234638" Foreground="#A3F3CA"/>
+      <Button x:Name="UpButton" Grid.Column="3" Tag="پوشهٔ بالاتر" Padding="10,6" Margin="9,0" VerticalAlignment="Center" FontSize="11"/>
+      <Button x:Name="ExportButton" Grid.Column="4" Tag="خروجی CSV" Padding="10,6" VerticalAlignment="Center" FontSize="11"/>
      </Grid>
      <Grid Grid.Row="1" Margin="12,2,12,8"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="133"/><ColumnDefinition Width="161"/><ColumnDefinition Width="166"/></Grid.ColumnDefinitions>
       <Grid><TextBox x:Name="SearchBox" FontSize="12"/><TextBlock x:Name="SearchPlaceholder" Tag="جست‌وجو در این پوشه و زیرپوشه‌ها…" IsHitTestVisible="False" Foreground="#748894" FontSize="11" Margin="12,0" TextTrimming="CharacterEllipsis"/></Grid>
@@ -101,9 +107,9 @@
        <DataGridTemplateColumn Header="نام" Width="*" MinWidth="160"><DataGridTemplateColumn.CellTemplate><DataTemplate><Grid><Grid.ColumnDefinitions><ColumnDefinition Width="24"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions><Path Data="{Binding IconPath}" Width="16" Height="16" Stretch="Uniform" Stroke="{Binding Color}" StrokeThickness="1.4" HorizontalAlignment="Left"/><TextBlock Grid.Column="1" Text="{Binding Name}" TextTrimming="CharacterEllipsis" FlowDirection="LeftToRight" TextAlignment="{Binding NameAlignment}"/></Grid></DataTemplate></DataGridTemplateColumn.CellTemplate></DataGridTemplateColumn>
        <DataGridTextColumn Header="اندازه" Binding="{Binding Size}" Width="100"><DataGridTextColumn.ElementStyle><Style TargetType="TextBlock"><Setter Property="FlowDirection" Value="LeftToRight"/><Setter Property="VerticalAlignment" Value="Center"/></Style></DataGridTextColumn.ElementStyle></DataGridTextColumn>
        <DataGridTemplateColumn Header="سهم از پوشه" Width="120"><DataGridTemplateColumn.CellTemplate><DataTemplate><Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="43"/></Grid.ColumnDefinitions><ProgressBar Height="4" Value="{Binding Percent}" Maximum="100" Background="#293740" Foreground="{Binding Color}" BorderThickness="0"/><TextBlock Grid.Column="1" Text="{Binding PercentText}" FontSize="10" Foreground="#A0B2BE" HorizontalAlignment="Right" FlowDirection="LeftToRight"/></Grid></DataTemplate></DataGridTemplateColumn.CellTemplate></DataGridTemplateColumn>
-       <DataGridTextColumn Header="آخرین تغییر محتوا" Binding="{Binding Date}" Width="143"/>
-       <DataGridTextColumn Header="تعداد فایل" Binding="{Binding Count}" Width="70"/>
-       <DataGridTextColumn Header="وضعیت" Binding="{Binding State}" Width="108"/>
+       <DataGridTextColumn Header="آخرین تغییر محتوا" Binding="{Binding Date}" Width="155"/>
+       <DataGridTextColumn Header="تعداد فایل" Binding="{Binding Count}" Width="100"/>
+       <DataGridTextColumn Header="وضعیت" Binding="{Binding State}" Width="120"/>
       </DataGrid.Columns>
      </DataGrid>
      <StackPanel x:Name="EmptyState" Grid.Row="3" VerticalAlignment="Center" HorizontalAlignment="Center" IsHitTestVisible="False" Margin="15"><TextBlock Text="◉" FontSize="32" Foreground="#4A8A7D" HorizontalAlignment="Center" Margin="0,0,0,9"/><TextBlock x:Name="EmptyTitle" Tag="برای شروع، یک درایو یا پوشه را اسکن کنید" FontSize="15" HorizontalAlignment="Center"/><TextBlock x:Name="EmptyHint" Tag="درایو را از نوار کناری انتخاب کنید، یا مسیر دلخواه را وارد کنید." Foreground="#7E96A4" FontSize="11" Margin="0,8,0,0" HorizontalAlignment="Center"/></StackPanel>

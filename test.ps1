@@ -29,6 +29,8 @@ $uiProcess = Start-Process -FilePath $exePath -ArgumentList @('--ui-smoke', ('"'
 if (-not $uiProcess.WaitForExit(60000)) { throw ('UI checks exceeded 60 seconds. Inspect process ' + $uiProcess.Id + '.') }
 if ((Test-Path -LiteralPath ($previewPrefix + '.error.txt')) -or -not (Test-Path -LiteralPath ($previewPrefix + '.ok.txt'))) { throw ('UI checks failed. Inspect ' + $previewPrefix + '.error.txt') }
 Get-Content -LiteralPath ($previewPrefix + '.ok.txt')
+if (-not (Test-Path -LiteralPath ($previewPrefix + '.pages.ok.txt'))) { throw 'Full results page checks failed.' }
+Get-Content -LiteralPath ($previewPrefix + '.pages.ok.txt')
 $reopenProcess = Start-Process -FilePath $exePath -ArgumentList @('--ui-smoke', ('"' + $fixturePath + '"'), ('"' + $previewPrefix + '"'), '--reopen') -WindowStyle Hidden -PassThru
 if (-not $reopenProcess.WaitForExit(60000)) { throw 'Cache restart check exceeded 60 seconds.' }
 if ($reopenProcess.ExitCode -ne 0 -or -not (Test-Path -LiteralPath ($previewPrefix + '.reopen.ok.txt'))) { throw 'Cache restart check failed.' }

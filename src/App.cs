@@ -75,7 +75,10 @@ namespace Spacio
             U<TextBox>("PathBox").KeyDown += async (s, e) => { if (e.Key == Key.Enter && !busy) await ScanAsync(U<TextBox>("PathBox").Text); };
             U<TextBox>("SearchBox").TextChanged += delegate { U<TextBlock>("SearchPlaceholder").Visibility = U<TextBox>("SearchBox").Text.Length == 0 ? Visibility.Visible : Visibility.Collapsed; searchTimer.Stop(); searchTimer.Start(); };
             foreach (var name in new [] { "SizeFilter", "AgeFilter", "SortFilter" }) U<ComboBox>(name).SelectionChanged += delegate { if (!changingLanguage) RefreshRows(); };
-            for (int i = 0; i < navNames.Length; i++) { int selected = i; U<Button>(navNames[i]).Click += delegate { SetMode(selected); }; }
+            for (int i = 0; i < navNames.Length; i++) { int selected = i; U<Button>(navNames[i]).Click += delegate { SetMode(selected, selected != 0); }; }
+            U<Button>("FilesNav").Click += delegate { SetMode(0, true); };
+            U<Button>("OpenResultsPageButton").Click += delegate { SetResultsPage(true); };
+            U<Button>("BackOverviewButton").Click += delegate { SetMode(0, false); };
             U<Button>("UpButton").Click += delegate { if (current != null && current.Parent != null) Navigate(current.Parent); };
             U<Button>("IssuesButton").Click += delegate { ShowIssues(); };
             U<Button>("AppsButton").Click += delegate { OpenShell("ms-settings:appsfeatures", null); };
@@ -112,7 +115,7 @@ namespace Spacio
             Localize(Window);
             U<Button>("LanguageButton").Content = L.Persian ? "English  ⇄" : "فارسی  ⇄";
             U<Button>("ScanButton").ToolTip = L.T("نتیجهٔ ذخیره‌شده ابتدا باز می‌شود و تغییرات در پس‌زمینه بررسی می‌شوند.");
-            U<Button>("RescanButton").ToolTip = L.T("بررسی کامل نتیجهٔ بازشده در پس‌زمینه؛ جدول هنگام بررسی باقی می‌ماند.");
+            U<Button>("RescanButton").ToolTip = L.T("فقط مسیر کادر بالا و زیرپوشه‌هایش تازه‌سازی می‌شوند؛ با ورود به پوشه، این مسیر هم تغییر می‌کند.");
             Populate("SizeFilter", new [] { "همهٔ اندازه‌ها", "بیشتر از ۱۰ MiB", "بیشتر از ۱۰۰ MiB", "بیشتر از ۱ GiB" });
             Populate("AgeFilter", new [] { "همهٔ تاریخ‌ها", "قدیمی‌تر از ۳۰ روز", "قدیمی‌تر از ۹۰ روز", "قدیمی‌تر از ۱۸۰ روز", "قدیمی‌تر از یک سال" });
             Populate("SortFilter", new [] { "حجم: بزرگ به کوچک", "تاریخ: جدید به قدیم", "تاریخ: قدیم به جدید", "نام: الفبا" });
@@ -127,7 +130,7 @@ namespace Spacio
             AddMenu(menu, "کپی مسیر", delegate { var row = Selected().FirstOrDefault(); if (row != null) try { Clipboard.SetText(row.Entry.Path); } catch (System.Runtime.InteropServices.COMException e) { Error(e); } });
             U<DataGrid>("FilesGrid").ContextMenu = menu;
             changingLanguage = false;
-            RefreshDrives(); UpdateMetrics(); SetMode(mode); UpdateSelection();
+            RefreshDrives(); UpdateMetrics(); SetMode(mode, null, false); UpdateSelection();
             if (snapshot == null) SetStatus(L.T("آمادهٔ اسکن"));
             else SetStatus(L.T(stale ? "داده‌ها تغییر کرده‌اند؛ دوباره اسکن کنید" : snapshot.Cancelled ? "اسکن متوقف شد؛ نتیجه ناقص است" : viewingCached ? "نتیجهٔ قبلی بدون اسکن دوباره باز شد" : cacheSaved ? "اسکن کامل و ذخیره شد" : "اسکن کامل شد"));
             UpdateLabels();
@@ -237,7 +240,7 @@ namespace Spacio
             if (busy) return;
             if (forceRescan && snapshot != null && !snapshot.Cancelled && Paths.Within(path, snapshot.Root.Path))
             {
-                await RefreshSnapshotAsync(true); return;
+                await RefreshSnapshotAsync(true, Paths.Normalize(path)); return;
             }
             if (liveMonitor != null) { liveMonitor.Dispose(); liveMonitor = null; }
             searchTimer.Stop(); if (queryCancel != null) queryCancel.Cancel(); queryVersion++;
@@ -338,10 +341,10 @@ namespace Spacio
             U<TextBlock>("SnapshotInfo").Text = label;
             U<TextBlock>("SnapshotInfo").ToolTip = L.T("نتیجهٔ ذخیره‌شده ابتدا باز می‌شود و تغییرات در پس‌زمینه بررسی می‌شوند.");
         }
-        private void SetMode(int next)
+        private void SetMode(int next, bool? fullPage = null, bool resetCategory = true)
         {
-            mode = next; category = null;
-            for (int i = 0; i < navNames.Length; i++) { U<Button>(navNames[i]).Background = B(i == mode ? "#233D36" : "#151C22"); U<Button>(navNames[i]).Foreground = B(i == mode ? "#8CE9CE" : "#9CB0BC"); }
+            mode = next; if (resetCategory) category = null;
+            SetResultsPage(fullPage ?? (resultsPageOpen || next != 0));
             U<TextBlock>("ListTitle").Text = L.T(titles[mode]);
             BuildCategoryButtons(); BuildMap(); RefreshRows();
         }
@@ -355,7 +358,7 @@ namespace Spacio
                 entry = await Task.Run(() => basis.Entries.FirstOrDefault(e => e.IsDirectory && String.Equals(e.Path, path, StringComparison.OrdinalIgnoreCase)));
                 if (closing || basis != snapshot || entry == null) return;
             }
-            current = entry; U<TextBox>("SearchBox").Text = ""; category = null;
+            current = entry; U<TextBox>("PathBox").Text = entry.Path; U<TextBox>("SearchBox").Text = ""; category = null;
             if (!snapshot.Cancelled && (cacheSaved || viewingCached)) RememberLastPath(entry.Path);
             SetMode(0);
         }
@@ -457,6 +460,7 @@ namespace Spacio
         private async void BuildMap()
         {
             int version = ++mapVersion;
+            if (resultsPageOpen) return;
             tiles.Clear();
             U<TextBlock>("MapTitle").Text = L.T(mode == 3 ? "نوع فایل‌ها" : "نقشهٔ فضا");
             U<TextBlock>("MapHint").Text = L.T(mode == 3 ? "گروه را برای دیدن فایل‌هایش انتخاب کنید" : "برای ورود، روی پوشه کلیک کنید");
@@ -678,7 +682,7 @@ namespace Spacio
                             if (reopen) await controller.RestoreLastAsync();
                             else await controller.ScanAsync(args[1], true);
                             if (reopen) controller.AssertRestoredCache();
-                            else { await controller.CheckUI(); await controller.CheckCacheUI(); }
+                            else { await controller.CheckUI(); await controller.CheckCacheUI(); await controller.CheckResultsPages(args[2]); }
                             L.Persian = false; controller.ApplyLanguage(); await controller.RefreshRowsAsync();
                             await Task.Delay(350); controller.SavePreview(args[2] + "-en.png");
                             L.Persian = true; controller.ApplyLanguage(); await controller.RefreshRowsAsync();

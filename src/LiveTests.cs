@@ -32,7 +32,8 @@ namespace Spacio
                 var cache = new SnapshotCache(Path.Combine(area, "Cache")); cache.Save(baseline, token);
                 byte[] original = File.ReadAllBytes(cache.FileFor(root));
                 var unchanged = LiveScanner.Refresh(baseline, null, token, null);
-                check(Object.ReferenceEquals(baseline, unchanged), "No-change validation preserves the original snapshot and timestamp");
+                check(Object.ReferenceEquals(baseline, unchanged), "No-change validation preserves the original snapshot and timestamp" +
+                    (Object.ReferenceEquals(baseline, unchanged) ? "" : " / " + String.Join("; ", baseline.Entries.Join(unchanged.Entries, a => a.Path, b => b.Path, (a, b) => a.Name + ": " + a.Attributes + " -> " + b.Attributes + ", created " + a.CreatedUtc.Ticks + " -> " + b.CreatedUtc.Ticks + ", modified " + a.ModifiedUtc.Ticks + " -> " + b.ModifiedUtc.Ticks + ", bytes " + a.Bytes + " -> " + b.Bytes))));
                 File.WriteAllText(first, "larger changed document"); File.Delete(second);
                 string added = Path.Combine(folder, "added.bin"); File.WriteAllText(added, "new content");
                 var updated = LiveScanner.Refresh(baseline, new [] { first, second, added, folder }, token, null);
@@ -50,6 +51,17 @@ namespace Spacio
                 File.AppendAllText(nested, "reported edit");
                 var partial = LiveScanner.Refresh(tree, new [] { nested }, token, null);
                 check(partial.Entries.Single(e => e.Name == "first.txt").Bytes == tree.Entries.Single(e => e.Name == "first.txt").Bytes, "An ordinary event does not re-enumerate unrelated subtrees");
+                File.AppendAllText(nested, "another off-scope edit");
+                long previousRootBytes = partial.Root.Bytes;
+                var scoped = LiveScanner.RefreshFolder(partial, renamed, token, null);
+                check(scoped.Entries.Single(e => e.Path == nested).Bytes == partial.Entries.Single(e => e.Path == nested).Bytes && scoped.Entries.Single(e => e.Name == "first.txt").Bytes == new FileInfo(Path.Combine(renamed, "first.txt")).Length,
+                    "Folder Refresh recursively updates its descendants without reading an edited sibling");
+                check(scoped.Root.Bytes == previousRootBytes + new FileInfo(Path.Combine(renamed, "first.txt")).Length - partial.Entries.Single(e => e.Name == "first.txt").Bytes,
+                    "Folder Refresh updates ancestor totals using saved sibling data");
+                check(Object.ReferenceEquals(scoped, LiveScanner.RefreshFolder(scoped, renamed, token, null)), "Unchanged folder Refresh retains the original snapshot and timestamp");
+                string entered = Path.Combine(root, "unseen", "only-this-folder"); Directory.CreateDirectory(entered); File.WriteAllText(Path.Combine(entered, "entered.txt"), "entered");
+                var enteredScan = LiveScanner.RefreshFolder(scoped, entered, token, null);
+                check(Paths.Equal(enteredScan.Root.Path, entered) && enteredScan.Root.FileCount == 1, "A newly entered uncached path is scanned exactly, without widening to an ancestor");
                 var reconciled = LiveScanner.Refresh(partial, null, token, null);
                 check(Scanner.SameTree(reconciled.Root, new Scanner().Scan(root, token, null).Root), "Startup and missed-event validation reconcile off-time changes");
                 cache.Save(reconciled, token); original = File.ReadAllBytes(cache.FileFor(root));
@@ -92,6 +104,13 @@ namespace Spacio
                     for (int i = 0; i < 4100; i++) monitor.Enqueue(Path.Combine(root, "event-" + i));
                     check(monitor.Take() == null, "A bounded queue falls back to full validation on overflow");
                 }
+                string deletable = Path.Combine(area, "Watched empty folder"); Directory.CreateDirectory(deletable);
+                using (var monitor = new LiveMonitor(deletable))
+                {
+                    string movedWatched = deletable + "-moved";
+                    Directory.Move(deletable, movedWatched); Directory.Delete(movedWatched);
+                    check(!Directory.Exists(movedWatched), "Live monitoring does not lock its watched folder against rename or deletion");
+                }
                 // The UI suite below exercises actual OS events and the same startup hook used by users.
                 var app = new Application { ShutdownMode = ShutdownMode.OnMainWindowClose };
                 var controller = new Controller(cache.DirectoryPath); app.MainWindow = controller.Window; Startup.HideForPreview(controller.Window);
@@ -123,6 +142,7 @@ namespace Spacio
             StartLiveUpdates();
             await AwaitLive(() => !busy && snapshot.Entries.Any(e => e.Path == offlineFile));
             check(cacheSaved, "Startup automatically reconciles and saves changes made while closed");
+            U<Button>("FilesNav").RaiseEvent(new RoutedEventArgs(Button.ClickEvent)); await RefreshRowsAsync();
             string renamed = offlineFile + ".moved"; File.Move(offlineFile, renamed);
             string added = Path.Combine(root, "watcher-created.bin"); File.WriteAllBytes(added, new byte[121]);
             await AwaitLive(() => !busy && snapshot.Entries.Any(e => e.Path == renamed) && snapshot.Entries.Any(e => e.Path == added));
@@ -131,6 +151,7 @@ namespace Spacio
             await AwaitLive(() => !busy && !snapshot.Entries.Any(e => e.Path == renamed) && snapshot.Entries.Single(e => e.Path == added).Bytes == 300);
             var observed = new Scanner().Scan(root, CancellationToken.None, null);
             check(snapshot.Root.Bytes == observed.Root.Bytes, "Real delete/resize events update displayed byte totals (live=" + snapshot.Root.Bytes + ", disk=" + observed.Root.Bytes + ")");
+            check(resultsPageOpen && filtered.Any(e => e.Path == added), "The full results page keeps receiving live filesystem changes");
             var rows = U<DataGrid>("FilesGrid").ItemsSource;
             var oldSnapshot = snapshot; byte[] cacheBefore = File.ReadAllBytes(cacheFile);
             File.AppendAllText(added, "force refresh");
@@ -161,6 +182,24 @@ namespace Spacio
             await AwaitLive(() => !busy && snapshot.Entries.Any(e => e.Path == newLiveFile));
             check(snapshot.Root.FileCount == 2, "Live monitoring follows a newly scanned path after switching roots");
             StopLiveUpdates();
+            liveEnabled = false;
+            string scope = Path.Combine(newRoot, "Only this folder"); Directory.CreateDirectory(scope);
+            string inside = Path.Combine(scope, "inside.txt"), outside = Path.Combine(newRoot, "outside.txt");
+            File.WriteAllText(inside, "before"); File.WriteAllText(outside, "outside");
+            await ScanAsync(newRoot, true);
+            var scopedBefore = snapshot;
+            Navigate(snapshot.Entries.Single(e => e.Path == scope)); await RefreshRowsAsync();
+            check(U<TextBox>("PathBox").Text == scope, "Opening a folder updates the Refresh path to the folder being viewed");
+            File.AppendAllText(inside, " inside edit"); File.AppendAllText(outside, " unrelated edit");
+            U<Button>("RescanButton").RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            await AwaitLive(() => !busy);
+            check(current.Path == scope && snapshot.Entries.Single(e => e.Path == inside).Bytes == new FileInfo(inside).Length && snapshot.Entries.Single(e => e.Path == outside).Bytes == 7,
+                "The actual Refresh button refreshes the viewed folder and leaves edited siblings at their saved values");
+            check(snapshot.Root.Path == newRoot && snapshot.Root.Bytes == scopedBefore.Root.Bytes + 12 && cacheSaved,
+                "Scoped UI Refresh retains the ancestor scan and saves the updated totals");
+            var persistedScope = new SnapshotCache(cache.DirectoryPath).Find(newRoot, CancellationToken.None).Snapshot;
+            check(persistedScope.Entries.Single(e => e.Path == outside).Bytes == 7 && persistedScope.Entries.Single(e => e.Path == inside).Bytes == 18,
+                "Scoped changes persist without replacing unrefreshed sibling metadata");
         }
     }
 }

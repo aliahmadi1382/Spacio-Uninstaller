@@ -4,6 +4,8 @@
 
 برنامهٔ دسکتاپ ویندوز برای بررسی حجم فایل‌ها و پوشه‌ها، با رابط فارسی و انگلیسی.
 
+در نسخهٔ **۱.۴.۱** بخش‌های **پوشه‌ها و فایل‌ها، فایل‌های بزرگ، فایل‌های قدیمی و نوع فایل‌ها** صفحهٔ کامل دارند. آن‌ها را از نوار کناری باز کنید، یا بالای جدول نمای کلی **نمایش در صفحهٔ کامل** را بزنید. جدول جای کارت‌ها و نقشه را می‌گیرد تا ردیف‌های بیشتری دیده شوند؛ جست‌وجو، فیلترها، به‌روزرسانی زنده و خروجی CSV در دسترس می‌مانند. با **بازگشت به نمای کلی** دوباره کارت‌ها و نقشه نمایش داده می‌شوند.
+
 نسخهٔ **۱.۴** نتیجهٔ ذخیره‌شده را ابتدا باز می‌کند و سپس تغییرات فایل‌ها را در پس‌زمینه دنبال می‌کند: حذف، جابه‌جایی، اضافه‌شدن و تغییر حجم. Refresh جدول را خالی نمی‌کند. [آخرین نسخهٔ قابل حمل را دریافت کنید](https://github.com/aliahmadi1382/Spacio-Uninstaller/releases/latest). اسکن‌های کامل نسخهٔ ۱.۲ به بعد همچنان قابل استفاده‌اند.
 
 در نسخهٔ **۱.۳.۲** صفحهٔ شروع حرکت پیوسته دارد: حلقه‌های چرخان، لوگوی شناور، نورهای سبز و ذرات متحرک. این صفحه هنگام آماده‌شدن برنامه و بارگذاری نتیجهٔ قبلی هم متحرک می‌ماند و پس از یک معرفی کوتاه وارد محیط اصلی می‌شود. آپدیت، نتایج اسکن و فایل‌های اسکن‌شدهٔ شما را پاک نمی‌کند؛ نسخهٔ جدید همان نتیجهٔ ذخیره‌شدهٔ قبلی را باز می‌کند.
@@ -13,7 +15,7 @@
 فایل `Spacio.exe` را از بستهٔ نسخهٔ جدید اجرا کنید. فایل `Spacio.exe.config` باید کنار آن بماند. نصب، اینترنت یا دسترسی Administrator لازم نیست. سیستم موردنیاز: Windows 10/11 نسخهٔ ۶۴ بیتی با .NET Framework 4.8.
 
 1. از کلید بالای پنجره برای تغییر **فارسی / English** استفاده کنید. زبان انتخابی برای اجرای بعدی ذخیره می‌شود.
-2. روی درایو در نوار کناری کلیک کنید، یا پوشه‌ای انتخاب کنید و **باز کردن / اسکن** را بزنید. مسیر جدید اسکن می‌شود؛ مسیر قبلی از نتیجهٔ ذخیره‌شده باز می‌شود و تغییرات خودکار بررسی می‌شوند. **تازه‌سازی ↻ / Refresh** بررسی کامل نتیجهٔ بازشده را در پس‌زمینه انجام می‌دهد؛ هنگام بررسی، جدول و مرور پوشه‌ها در دسترس می‌مانند.
+2. روی درایو در نوار کناری کلیک کنید، یا پوشه‌ای انتخاب کنید و **باز کردن / اسکن** را بزنید. مسیر جدید اسکن می‌شود؛ مسیر قبلی از نتیجهٔ ذخیره‌شده باز می‌شود و تغییرات خودکار بررسی می‌شوند. **تازه‌سازی ↻ / Refresh** فقط مسیر داخل کادر و زیرپوشه‌هایش را در پس‌زمینه بررسی می‌کند. با ورود به پوشه، مسیر کادر نیز تغییر می‌کند. مثلاً در `C:\Projects\Git-Hub`، Refresh کل درایو C را دوباره نمی‌خواند؛ فقط حجم مجموع پوشه‌های بالاتر با دادهٔ جدید محاسبه می‌شود. جدول هنگام بررسی در دسترس می‌ماند.
 3. نقشهٔ فضا و جدول حجم کل زیرپوشه‌ها را نشان می‌دهند. برای ورود به یک پوشه روی نقشه کلیک کنید یا روی ردیف آن دوبار کلیک کنید.
 4. از **فایل‌های بزرگ**، **فایل‌های قدیمی** و **نوع فایل‌ها** استفاده کنید. جست‌وجو زیرپوشه‌ها را هم بررسی می‌کند. فیلتر حجم، تاریخ و ترتیب نمایش در بالای جدول قرار دارند.
 5. با Ctrl یا Shift چند ردیف را انتخاب کنید. **انتقال به سطل بازیافت** ابتدا فهرست دقیق مسیرها را برای تأیید نشان می‌دهد. کلید Delete همین پنجرهٔ تأیید را باز می‌کند.
@@ -21,7 +23,7 @@
 
 برای آزمایش: یک مسیر را اسکن کنید و پس از ذخیره برنامه را ببندید. یک فایل آزمایشی را حذف یا جابه‌جا کنید و برنامه را دوباره باز کنید. نتیجهٔ قبلی ابتدا نمایش داده می‌شود و تغییرات در پس‌زمینه اعمال و ذخیره می‌شوند. هنگام باز بودن برنامه هم تغییرات مسیر اسکن‌شده بدون فشردن Refresh دنبال می‌شوند. فایل‌های جدید معمولاً پس از چند ثانیه دیده می‌شوند؛ تعداد زیاد تغییرات، درایو کند یا بررسی کامل زمان بیشتری می‌خواهد.
 
-تغییرات معمول در بسته‌های کوتاه پردازش می‌شوند. در شروع، با Refresh، پس از ازدست‌رفتن اعلان‌های ویندوز و هر پنج دقیقه، یک بررسی کامل در پس‌زمینه برای تطبیق اطلاعات انجام می‌شود. روی درایو بزرگ این بررسی زمان می‌برد، اما نتیجهٔ ذخیره‌شده قابل مرور باقی می‌ماند.
+تغییرات معمول در بسته‌های کوتاه پردازش می‌شوند. در شروع، پس از ازدست‌رفتن اعلان‌های ویندوز و هر پنج دقیقه، پایش خودکار یک بررسی کامل در پس‌زمینه انجام می‌دهد. Refresh دستی مستقل از این پایش است و فقط مسیر داخل کادر را بررسی می‌کند. روی درایو بزرگ این بررسی زمان می‌برد، اما نتیجهٔ ذخیره‌شده قابل مرور باقی می‌ماند.
 
 ## آپدیت داخل برنامه
 
@@ -30,6 +32,8 @@
 آپدیت به اینترنت و امکان نوشتن در پوشهٔ خود برنامه نیاز دارد؛ برای استفادهٔ قابل حمل، بسته را در پوشه‌ای متعلق به خودتان استخراج کنید. اسکن‌ها و زبان در LocalAppData نگهداری می‌شوند و با تعویض فایل اجرایی از بین نمی‌روند. قطع اینترنت جلوی استفاده از برنامه را نمی‌گیرد. کاربران نسخهٔ ۱.۲ باید یک بار نسخهٔ ۱.۳ یا جدیدتر را از Releases دریافت کنند؛ اعلان آپدیت از نسخهٔ ۱.۳ فعال است.
 
 کلیک راست روی ردیف: ورود به پوشه، نمایش در Explorer و کپی مسیر. تاریخ ایجاد و تاریخ تغییر اصلی در توضیح شناور هر ردیف نمایش داده می‌شود. خروجی CSV شامل تمام نتایج فیلترشده است؛ جدول برای پاسخ‌گویی سریع‌تر حداکثر ۲٬۰۰۰ ردیف را نمایش می‌دهد.
+
+اگر هنگام حذف در Explorer پیام **Folder In Use** ظاهر شد، پنجره‌ها یا برنامه‌هایی را که از آن پوشه یا زیرپوشه‌هایش استفاده می‌کنند ببندید و دوباره امتحان کنید. «نمایش در Explorer» مورد انتخابی را در پوشهٔ والد نشان می‌دهد و برنامه‌های دیگر را نمی‌بندد. پایش زنده با تغییر نام یا حذف پوشه سازگار است؛ این رفتار با یک پوشهٔ آزمایشی بررسی می‌شود.
 
 برای حذف نرم‌افزارهای نصب‌شده، دکمهٔ **برنامه‌های نصب‌شده** تنظیمات مربوط ویندوز را باز می‌کند.
 
@@ -52,11 +56,13 @@
 
 ## English
 
+**Full results pages in 1.4.1:** Open Folders & files, Largest files, Older files or File types from the sidebar. The dashboard table also has **Open full page**. The results use the space occupied by the overview cards and map, retaining the same virtualized table, selection, search and filters. Live updates, folder navigation, cleanup and CSV export remain available. **Back to overview** restores the dashboard.
+
 Download the portable ZIP from [Releases](https://github.com/aliahmadi1382/Spacio-Uninstaller/releases/latest), extract it, and run `Spacio.exe` alongside `Spacio.exe.config`. Requires 64-bit Windows 10/11 and .NET Framework 4.8. No installation or administrator access is required.
 
-**Version 1.4 — live results:** Saved results appear first, then background validation reconciles edits made while the app was closed. The open scan is monitored for file/folder creation, deletion, rename, size/date and attribute changes. Notifications are batched; ordinary events read affected paths and rebuild aggregates on a worker. Large bursts may take longer. **Refresh** validates the open snapshot without clearing the table or blocking navigation. Drive free-space cards refresh every ten seconds. Opening another cached path switches live monitoring to that snapshot. Existing 1.2 caches remain readable; missing/corrupt caches do not trigger an automatic scan.
+**Version 1.4 — live results:** Saved results appear first, then background validation reconciles edits made while the app was closed. The open scan is monitored for file/folder creation, deletion, rename, size/date and attribute changes. Notifications are batched; ordinary events read affected paths and rebuild aggregates on a worker. Large bursts may take longer. **Refresh** validates only the path in the input and its descendants, without clearing the table or blocking navigation. Opening a folder updates that path. A subfolder refresh keeps the surrounding cached drive scan and recalculates its ancestor totals from saved sibling data; it does not walk the rest of the drive. Drive free-space cards refresh every ten seconds. Opening another cached path switches live monitoring to that snapshot. Existing 1.2 caches remain readable; missing/corrupt caches do not trigger an automatic scan.
 
-**Recovery checks:** Background validation runs at startup, on Refresh, after notification overflow, and every five minutes to recover missed events (including sleep or removable-media interruptions). A whole-drive validation can take time; the saved view remains usable. Changes arriving during a refresh stay queued for the next pass. Cache and updater writes are excluded from notifications to prevent feedback. See Microsoft’s [FileSystemWatcher buffer documentation](https://learn.microsoft.com/en-us/dotnet/api/system.io.filesystemwatcher.internalbuffersize?view=netframework-4.8.1).
+**Recovery checks:** Automatic background validation runs at startup, after notification overflow, and every five minutes to recover missed events (including sleep or removable-media interruptions). A whole-drive validation can take time; the saved view remains usable. Changes arriving during a refresh stay queued for the next pass. Cache and updater writes are excluded from notifications to prevent feedback. See Microsoft’s [FileSystemWatcher buffer documentation](https://learn.microsoft.com/en-us/dotnet/api/system.io.filesystemwatcher.internalbuffersize?view=netframework-4.8.1).
 
 **Updates:** Spacio checks the official repository's stable GitHub Releases at startup and every six hours while running. You can also use **Check for updates** in the sidebar. The in-app notification offers **Download & install** and restarts the application after verification. Scans and language settings are retained. Installation waits for scanning/cleanup to finish, needs internet and a writable application folder, and runs without elevation. Download cancellation and network failure leave the installed app usable. Version 1.2 users need one manual download to gain the updater.
 
@@ -105,6 +111,8 @@ For each user-facing release, increment both versions in `src/AssemblyInfo.cs`, 
 After publication, `tools/verify-upgrade.ps1 -PreviousExecutable <path-to-an-older-Spacio.exe>` verifies the actual public feed, download, checksums, installation, and restart using that older release's updater. Its isolated startup smoke mode creates a saved scan with the old version and verifies restoration before live monitoring starts; the cache bytes, scan timestamp and original scanned file must remain unchanged. Use a previous version from 1.3.0 onward. The script creates isolated application copies under `.test-data`; it never replaces the supplied original executable. This integration check needs internet and a newer public release. Separate live tests verify subsequent automatic reconciliation. The loading smoke check also captures 48 rendered frames and verifies central-scene movement while the main UI thread is blocked.
 
 Git tracks the full source, UI, translations, vector/raster brand assets, build scripts, tests, and documentation. Generated executables are distributed through Releases. Disposable test fixtures (`.test-data`), test reports/screenshots (`artifacts`), build output (`dist`), local credentials, and saved scan data are ignored. See [CHANGELOG.md](CHANGELOG.md) for version notes.
+
+Full results navigation and minimum-size layout checks are in `src\ResultsPages.cs`.
 
 Source files: `src\Core.cs` (scan/metadata/safety), `src\Recycle.cs` (Windows Shell interop), `src\Locales.cs` (language), `src\App.cs` (application), `src\MainWindow.xaml` (interface), `src\SelfTests.cs` (checks), `src\LiveScanner.cs` (incremental reconciliation and watcher), `src\LiveUI.cs` (live lifecycle), `src\LiveTests.cs` (live integration checks).
 

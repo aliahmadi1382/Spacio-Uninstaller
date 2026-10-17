@@ -16,7 +16,20 @@ namespace Spacio
                 a.CreatedUtc == b.CreatedUtc && a.ModifiedUtc == b.ModifiedUtc &&
                 (a.IsDirectory || a.Bytes == b.Bytes) && a.Note == b.Note;
         }
-        public static Snapshot Refresh(Snapshot before, string[] changes, CancellationToken token, Action<ScanProgress> progress)
+        public static Snapshot RefreshFolder(Snapshot before, string path, CancellationToken token, Action<ScanProgress> progress)
+        {
+            path = Paths.Normalize(path); token.ThrowIfCancellationRequested();
+            if (!Paths.Within(path, before.Root.Path)) throw new ArgumentException("Folder is outside the saved scan.");
+            if (Paths.Equal(path, before.Root.Path)) return Refresh(before, null, token, progress);
+            // A newly entered path absent from this snapshot gets its own scan, never a scan
+            // of a broader ancestor just to discover it.
+            if (!before.Entries.Any(e => { token.ThrowIfCancellationRequested(); return e.IsDirectory && String.Equals(e.Path, path, StringComparison.OrdinalIgnoreCase); }))
+            {
+                var fresh = new Scanner().Scan(path, token, progress); token.ThrowIfCancellationRequested(); return fresh;
+            }
+            return Refresh(before, new [] { path }, token, progress, true);
+        }
+        public static Snapshot Refresh(Snapshot before, string[] changes, CancellationToken token, Action<ScanProgress> progress, bool recursivePaths = false)
         {
             token.ThrowIfCancellationRequested();
             Paths.RequireLocal(before.Root.Path); Paths.CheckAncestors(before.Root.Path);
@@ -24,25 +37,7 @@ namespace Spacio
             {
                 var fresh = new Scanner().Scan(before.Root.Path, token, progress);
                 token.ThrowIfCancellationRequested();
-                // A transient access failure is not evidence that the saved contents disappeared.
-                var unavailable = fresh.Entries.Where(e => e.Note.StartsWith("دسترسی کامل ممکن نیست", StringComparison.Ordinal) || e.Note.StartsWith("خواندن مشخصات ممکن نیست", StringComparison.Ordinal)).ToList();
-                if (unavailable.Any(e => e == fresh.Root)) throw new IOException("پوشه پیدا نشد یا در دسترس نیست.");
-                if (unavailable.Count > 0)
-                {
-                    var wanted = new HashSet<string>(unavailable.Select(e => e.Path), StringComparer.OrdinalIgnoreCase);
-                    var oldEntries = before.Entries.Where(e => wanted.Contains(e.Path)).ToDictionary(e => e.Path, StringComparer.OrdinalIgnoreCase);
-                    var replacements = new Dictionary<string, Entry>(StringComparer.OrdinalIgnoreCase);
-                    foreach (var entry in unavailable)
-                    {
-                        Entry old;
-                        if (oldEntries.TryGetValue(entry.Path, out old))
-                        {
-                            var retained = Copy(old, null); retained.Note = entry.Note;
-                            retained.Children.AddRange(old.Children); replacements[entry.Path] = retained;
-                        }
-                    }
-                    if (replacements.Count > 0) fresh = Rebuild(fresh, replacements, token);
-                }
+                fresh = PreserveUnavailable(fresh, before.Root, token);
                 // Preserve the original cache bytes and timestamp when nothing actually changed.
                 if (!before.IsStale && Equivalent(before, fresh, token)) return before;
                 return fresh;
@@ -92,17 +87,18 @@ namespace Spacio
                     {
                         // LastWrite notifications on an existing directory do not imply changes
                         // to every descendant. Child notifications (or overflow recovery) cover those.
-                        if (old != null && old.IsDirectory && old.Note.Length == 0 && old.CreatedUtc == next.CreatedUtc && old.Attributes == next.Attributes)
+                        if (!recursivePaths && old != null && old.IsDirectory && old.Note.Length == 0 && old.CreatedUtc == next.CreatedUtc && old.Attributes == next.Attributes)
                         {
                             if (SameMetadata(old, next)) continue;
                             next.Children.AddRange(old.Children);
                         }
                         else
                         {
-                            var subtree = new Scanner().Scan(path, token, null); token.ThrowIfCancellationRequested();
-                            if (subtree.Root.Note.Length > 0) throw new IOException(subtree.Root.Note);
+                            var subtree = new Scanner().Scan(path, token, progress); token.ThrowIfCancellationRequested();
+                            subtree = PreserveUnavailable(subtree, old, token);
                             next = subtree.Root;
                             covered.Add(path);
+                            if (old != null && EquivalentEntries(old, next, token)) continue;
                         }
                     }
                 }
@@ -130,7 +126,30 @@ namespace Spacio
                     parent = Path.GetDirectoryName(parent);
                 }
             }
-            return Rebuild(before, replacementsByPath, token);
+            var rebuilt = Rebuild(before, replacementsByPath, token);
+            if (recursivePaths) rebuilt.IsStale = before.IsStale;
+            return rebuilt;
+        }
+        private static Snapshot PreserveUnavailable(Snapshot fresh, Entry previous, CancellationToken token)
+        {
+            // A transient access failure is not evidence that saved contents disappeared.
+            var unavailable = fresh.Entries.Where(e => e.Note.StartsWith("دسترسی کامل ممکن نیست", StringComparison.Ordinal) || e.Note.StartsWith("خواندن مشخصات ممکن نیست", StringComparison.Ordinal)).ToList();
+            if (unavailable.Any(e => e == fresh.Root)) throw new IOException("پوشه پیدا نشد یا در دسترس نیست.");
+            if (previous == null || unavailable.Count == 0) return fresh;
+            var notes = unavailable.ToDictionary(e => e.Path, e => e.Note, StringComparer.OrdinalIgnoreCase);
+            var replacements = new Dictionary<string, Entry>(StringComparer.OrdinalIgnoreCase);
+            var pending = new Stack<Entry>(); pending.Push(previous);
+            while (pending.Count > 0)
+            {
+                token.ThrowIfCancellationRequested(); var old = pending.Pop(); string note;
+                if (notes.TryGetValue(old.Path, out note))
+                {
+                    var retained = Copy(old, null); retained.Note = note; retained.Children.AddRange(old.Children);
+                    replacements[old.Path] = retained;
+                }
+                foreach (var child in old.Children) pending.Push(child);
+            }
+            return replacements.Count == 0 ? fresh : Rebuild(fresh, replacements, token);
         }
         private static bool Reserved(Entry entry)
         {
@@ -186,7 +205,11 @@ namespace Spacio
         private static bool Equivalent(Snapshot a, Snapshot b, CancellationToken token)
         {
             if (a.Entries.Count != b.Entries.Count || a.Root.Bytes != b.Root.Bytes || a.ErrorCount != b.ErrorCount) return false;
-            var pending = new Stack<Tuple<Entry, Entry>>(); pending.Push(Tuple.Create(a.Root, b.Root));
+            return EquivalentEntries(a.Root, b.Root, token);
+        }
+        private static bool EquivalentEntries(Entry a, Entry b, CancellationToken token)
+        {
+            var pending = new Stack<Tuple<Entry, Entry>>(); pending.Push(Tuple.Create(a, b));
             while (pending.Count > 0)
             {
                 token.ThrowIfCancellationRequested(); var pair = pending.Pop();

@@ -51,6 +51,9 @@ Open the saved result first, then reconcile filesystem changes in the background
 at startup and monitor the open scan live, as requested by the user. Never clear
 the displayed result or overwrite a good cache with a cancelled/failed refresh.
 Unchanged validation must retain the original scan timestamp and cache bytes.
+Manual Refresh must only rescan the path shown in the path field and its
+descendants. Folder navigation must update that field. Recalculate ancestor
+totals from the cached tree without scanning siblings or widening to the drive.
 Verify upgrades with
 `tools/verify-upgrade.ps1`, which checks cache bytes, the original scan timestamp,
 user-file contents, and restoration in the newly installed app.

@@ -81,24 +81,27 @@ namespace Spacio
             if ((DateTime.UtcNow - lastFullCheck).TotalMinutes >= 5) liveMonitor.RequireFull();
             if (liveMonitor.HasPending) await RefreshSnapshotAsync(false);
         }
-        private async Task RefreshSnapshotAsync(bool full)
+        private async Task RefreshSnapshotAsync(bool full, string requestedPath = null)
         {
             if (busy || refreshing || snapshot == null || closing) return;
             var basis = snapshot;
+            string viewAtStart = current == null ? basis.Root.Path : current.Path;
+            bool scoped = requestedPath != null && !Paths.Equal(requestedPath, basis.Root.Path);
             string[] changes = full || liveMonitor == null ? null : liveMonitor.Take();
-            if (full && liveMonitor != null) liveMonitor.Take();
+            if (full && !scoped && liveMonitor != null) liveMonitor.Take();
             refreshing = true; refreshCancel = new CancellationTokenSource();
             var token = refreshCancel.Token;
             SetBusy(true, true); SetLiveState("بررسی تغییرات در پس‌زمینه…");
-            SetStatus(L.T("بررسی تغییرات در پس‌زمینه…"));
-            if (changes == null) lastFullCheck = DateTime.UtcNow;
+            SetStatus(L.T("بررسی تغییرات در پس‌زمینه…") + "  " + (requestedPath ?? basis.Root.Path));
+            if (changes == null && !scoped) lastFullCheck = DateTime.UtcNow;
             try
             {
                 var progress = new Progress<ScanProgress>(p => {
                     if (!closing && refreshing) SetStatus(L.T("بررسی تغییرات در پس‌زمینه…") + "  " + p.Path);
                 });
                 var result = await Task.Run(() => {
-                    var updated = LiveScanner.Refresh(basis, changes, token, p => ((IProgress<ScanProgress>)progress).Report(p));
+                    var updated = scoped ? LiveScanner.RefreshFolder(basis, requestedPath, token, p => ((IProgress<ScanProgress>)progress).Report(p)) :
+                        LiveScanner.Refresh(basis, changes, token, p => ((IProgress<ScanProgress>)progress).Report(p));
                     token.ThrowIfCancellationRequested();
                     var directories = new Dictionary<string, Entry>(StringComparer.OrdinalIgnoreCase);
                     foreach (var entry in updated.Entries)
@@ -110,10 +113,11 @@ namespace Spacio
                     return Tuple.Create(updated, directories);
                 }, token);
                 if (closing) return;
-                if (changes == null) lastFullCheck = DateTime.UtcNow;
+                if (changes == null && !scoped) lastFullCheck = DateTime.UtcNow;
                 // Once atomic persistence completes, publish that committed result even if Stop
                 // was clicked at the same instant. Cancellation before commit keeps the old one.
                 string path = current == null ? result.Item1.Root.Path : current.Path;
+                if (requestedPath != null && Paths.Equal(path, viewAtStart)) path = requestedPath;
                 Entry directory;
                 while (!result.Item2.TryGetValue(path, out directory))
                 {
@@ -121,17 +125,19 @@ namespace Spacio
                     if (path == null) { directory = result.Item1.Root; break; }
                 }
                 snapshot = result.Item1; current = directory; stale = snapshot.IsStale;
+                if (!Paths.Equal(basis.Root.Path, snapshot.Root.Path)) AttachLive(true);
+                if (requestedPath != null) U<TextBox>("PathBox").Text = current.Path;
                 if (!Object.ReferenceEquals(snapshot, basis)) { viewingCached = false; cacheSaved = true; }
                 UpdateMetrics(); BuildMap(); await RefreshRowsAsync();
                 await SaveLastPathAsync(current.Path);
                 SetLiveState("زنده · تغییرات خودکار دنبال می‌شوند");
-                SetStatus(L.T("تغییرات بررسی و ذخیره شد")); RefreshDrives();
+                SetStatus(L.T("تغییرات بررسی و ذخیره شد") + "  " + (requestedPath ?? basis.Root.Path)); RefreshDrives();
                 nextLiveAttempt = DateTime.UtcNow.AddSeconds(3);
             }
             catch (OperationCanceledException)
             {
                 if (!closing) { SetLiveState("بررسی متوقف شد؛ نتیجهٔ قبلی حفظ شده است"); SetStatus(L.T("بررسی متوقف شد؛ نتیجهٔ قبلی حفظ شده است")); }
-                if (liveMonitor != null) liveMonitor.RequireFull();
+                if (liveMonitor != null && !scoped) liveMonitor.RequireFull();
                 nextLiveAttempt = DateTime.UtcNow.AddSeconds(30);
             }
             catch (Exception e)
@@ -141,7 +147,7 @@ namespace Spacio
                     SetLiveState("بررسی ممکن نشد؛ تلاش دوباره به‌صورت خودکار");
                     SetStatus(L.T("بررسی ممکن نشد؛ تلاش دوباره به‌صورت خودکار") + "  ·  " + L.T(e.Message));
                 }
-                if (liveMonitor != null) liveMonitor.RequireFull();
+                if (liveMonitor != null && !scoped) liveMonitor.RequireFull();
                 nextLiveAttempt = DateTime.UtcNow.AddSeconds(15);
             }
             finally

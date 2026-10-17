@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.4.1
+
+- Limit manual Refresh to the path in the input and its descendants, including when that folder belongs to a cached whole-drive scan. Recalculate ancestor totals from the refreshed subtree and saved siblings.
+- Keep the path input synchronized with folder navigation; retain unrelated pending live events and preserve inaccessible saved contents during a folder refresh.
+- Give Folders & files, Largest files, Older files and File types dedicated full-height results pages with sidebar navigation and a return to Overview.
+- Add Open full page to the dashboard table; reclaim the metric/map area for browsing without resetting the table, selection, search or filters.
+- Keep live updates, folder navigation, cleanup controls and CSV export available on the expanded pages; preserve the active category when changing language.
+- Widen count, date and status columns so larger values are easier to read; compact sidebar navigation and the read-only notice to keep drive cards visible at the minimum window size.
+- Verify the enlarged table at the minimum window size in Persian and English, live updates, scoped Refresh through the actual button, saved-scan restoration and renaming/deleting a watched test folder.
+
 ## 1.4.0
 
 - Keep the existing table, navigation, filters and map available during Refresh; perform drive queries, result preparation and persistence on workers.

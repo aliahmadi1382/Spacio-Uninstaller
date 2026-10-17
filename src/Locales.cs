@@ -9,6 +9,10 @@ namespace Spacio
     {
         public static bool Persian = true;
         private static readonly Dictionary<string, string> English = new Dictionary<string, string> {
+            {"فقط مسیر کادر بالا و زیرپوشه‌هایش تازه‌سازی می‌شوند؛ با ورود به پوشه، این مسیر هم تغییر می‌کند.", "Refresh checks only the path above and its descendants. Opening a folder updates this path too."},
+            {"نمایش در صفحهٔ کامل", "Open full page"},
+            {"بازگشت به نمای کلی", "Back to overview"},
+            {"مرور کامل محتوا، جست‌وجو و فیلتر در یک صفحه", "Explore, search and filter with more room for your files"},
             {"بررسی کامل نتیجهٔ بازشده در پس‌زمینه؛ جدول هنگام بررسی باقی می‌ماند.", "Validates the open scan in the background while keeping the table available."},
             {"انتقال تمام شد؛ نتیجه به‌صورت خودکار به‌روز می‌شود.", "Recycling finished; results will update automatically."},
             {"نتیجهٔ ذخیره‌شده ابتدا باز می‌شود و تغییرات در پس‌زمینه بررسی می‌شوند.", "Saved results open first; changes are checked in the background."},
