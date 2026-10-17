@@ -7,11 +7,12 @@ if (-not (Test-Path -LiteralPath $compilerPath)) { throw '.NET Framework 4.8 and
 $outputDirectory = [System.IO.Path]::GetFullPath($Destination)
 New-Item -ItemType Directory -Path $outputDirectory -Force | Out-Null
 & (Join-Path $projectRoot 'tools\build-brand.ps1')
-$references = @('System.dll', 'System.Core.dll', 'System.Xaml.dll', 'System.Windows.Forms.dll', 'System.Drawing.dll', 'WPF\WindowsBase.dll', 'WPF\PresentationCore.dll', 'WPF\PresentationFramework.dll')
+$references = @('System.dll', 'System.Core.dll', 'System.Net.Http.dll', 'System.Web.Extensions.dll', 'System.IO.Compression.dll', 'System.Xaml.dll', 'System.Windows.Forms.dll', 'System.Drawing.dll', 'WPF\WindowsBase.dll', 'WPF\PresentationCore.dll', 'WPF\PresentationFramework.dll')
 $compilerArgs = @('/nologo', '/target:winexe', '/platform:x64', '/optimize+', '/langversion:5', '/utf8output', ('/out:' + (Join-Path $outputDirectory 'Spacio.exe')), ('/win32manifest:' + (Join-Path $projectRoot 'src\app.manifest')), ('/resource:' + (Join-Path $projectRoot 'src\MainWindow.xaml') + ',Spacio.MainWindow.xaml'))
 $compilerArgs += '/win32icon:' + (Join-Path $projectRoot 'assets\spacio.ico')
 $compilerArgs += '/resource:' + (Join-Path $projectRoot 'assets\BrandMark.xaml') + ',Spacio.BrandMark.xaml'
 $compilerArgs += '/resource:' + (Join-Path $projectRoot 'assets\spacio.ico') + ',Spacio.ico'
+$compilerArgs += '/resource:' + (Join-Path $projectRoot 'src\StartupWindow.xaml') + ',Spacio.StartupWindow.xaml'
 foreach ($reference in $references) { $compilerArgs += '/reference:' + (Join-Path $frameworkPath $reference) }
 $compilerArgs += Get-ChildItem -LiteralPath (Join-Path $projectRoot 'src') -Filter '*.cs' | ForEach-Object { $_.FullName }
 & $compilerPath @compilerArgs

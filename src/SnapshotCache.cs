@@ -25,6 +25,65 @@ namespace Spacio
         {
             folder = directory ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Spacio", "Scans");
         }
+        public void SaveLastPath(string path)
+        {
+            Directory.CreateDirectory(folder);
+            string target = Path.Combine(folder, "last-path.txt"), temporary = target + "." + Guid.NewGuid().ToString("N") + ".tmp";
+            try
+            {
+                File.WriteAllText(temporary, Paths.Normalize(path), Encoding.UTF8);
+                CommitFile(temporary, target, CancellationToken.None);
+            }
+            finally { if (File.Exists(temporary)) File.Delete(temporary); }
+        }
+        public string LastPath()
+        {
+            try
+            {
+                string target = Path.Combine(folder, "last-path.txt");
+                if (File.Exists(target) && new FileInfo(target).Length < 65536) return Paths.Normalize(File.ReadAllText(target, Encoding.UTF8));
+            }
+            catch (IOException) { } catch (UnauthorizedAccessException) { } catch (ArgumentException) { }
+            // Upgrade from 1.2: inspect only saved cache headers, never the scanned drive.
+            string latest = null; DateTime newest = DateTime.MinValue;
+            try
+            {
+                if (!Directory.Exists(folder)) return null;
+                foreach (string path in Directory.EnumerateFiles(folder, "*.scan"))
+                {
+                    try
+                    {
+                        using (var file = File.OpenRead(path)) using (var reader = new BinaryReader(file, Encoding.UTF8))
+                        {
+                            string root; DateTime started; ReadHeader(reader, out root, out started);
+                            if (started > newest) { latest = root; newest = started; }
+                        }
+                    }
+                    catch (InvalidDataException) { } catch (IOException) { } catch (UnauthorizedAccessException) { } catch (ArgumentException) { }
+                }
+            }
+            catch (IOException) { } catch (UnauthorizedAccessException) { }
+            return latest;
+        }
+        private static void CommitFile(string temporary, string target, CancellationToken cancel)
+        {
+            for (int attempt = 0; ; attempt++)
+            {
+                cancel.ThrowIfCancellationRequested();
+                try
+                {
+                    if (File.Exists(target)) File.Replace(temporary, target, null); else File.Move(temporary, target);
+                    return;
+                }
+                catch (IOException e)
+                {
+                    // Indexers and antivirus can briefly hold recently written cache files.
+                    int code = e.HResult & 0xffff;
+                    if (attempt >= 5 || (code != 32 && code != 33 && code != 1175 && code != 1176 && code != 1177)) throw;
+                    if (cancel.WaitHandle.WaitOne(50 * (attempt + 1))) cancel.ThrowIfCancellationRequested();
+                }
+            }
+        }
         public string FileFor(string root)
         {
             using (var hash = SHA256.Create())
@@ -114,7 +173,7 @@ namespace Spacio
                     file.Flush(true);
                 }
                 cancel.ThrowIfCancellationRequested();
-                if (File.Exists(target)) File.Replace(temporary, target, null); else File.Move(temporary, target);
+                CommitFile(temporary, target, cancel);
             }
             finally { if (File.Exists(temporary)) File.Delete(temporary); }
         }

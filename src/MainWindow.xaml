@@ -23,8 +23,17 @@
   <Style TargetType="ToolTip"><Setter Property="Background" Value="#29353E"/><Setter Property="Foreground" Value="#F0F6FA"/><Setter Property="BorderBrush" Value="#42535F"/><Setter Property="Padding" Value="12"/><Setter Property="MaxWidth" Value="720"/></Style>
  </Window.Resources>
  <Grid Background="#101418">
+  <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
   <Grid.ColumnDefinitions><ColumnDefinition Width="224"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
-  <Border Grid.Column="0" Background="#151C22" BorderBrush="#29333B" BorderThickness="0,0,1,0">
+  <Border x:Name="UpdateBanner" Grid.Row="0" Grid.ColumnSpan="2" Background="#173B30" BorderBrush="#2D6950" BorderThickness="0,0,0,1" Padding="22,12" Visibility="Collapsed">
+   <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+    <StackPanel Margin="0,0,18,0"><TextBlock x:Name="UpdateTitle" Foreground="#A3F3CA" FontWeight="SemiBold"/><TextBlock x:Name="UpdateDetail" Foreground="#A6C6B8" FontSize="11" TextWrapping="Wrap" Margin="0,4,0,0"/><ProgressBar x:Name="UpdateProgress" Height="3" Maximum="100" Foreground="#76E7B1" Background="#285342" BorderThickness="0" Margin="0,8,0,0" Visibility="Collapsed"/></StackPanel>
+    <Button x:Name="InstallUpdateButton" Grid.Column="1" Tag="دانلود و نصب" Background="#83EBB6" Foreground="#113A28" FontWeight="SemiBold" VerticalAlignment="Center" Visibility="Collapsed"/>
+    <Button x:Name="ReleaseNotesButton" Grid.Column="2" Tag="جزئیات نسخه" Margin="8,0" Background="#24503C" VerticalAlignment="Center"/>
+    <Button x:Name="DismissUpdateButton" Grid.Column="3" Tag="بعداً" Background="Transparent" Foreground="#B9D8C9" VerticalAlignment="Center"/>
+   </Grid>
+  </Border>
+  <Border Grid.Row="1" Grid.Column="0" Background="#151C22" BorderBrush="#29333B" BorderThickness="0,0,1,0">
    <Grid Margin="16,22,16,16">
     <Grid.RowDefinitions><RowDefinition Height="80"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
     <StackPanel>
@@ -45,18 +54,19 @@
      <Button x:Name="AppsButton" Style="{StaticResource Nav}"><TextBlock Tag="برنامه‌های نصب‌شده"/></Button>
      <Button x:Name="BinButton" Style="{StaticResource Nav}"><TextBlock Tag="سطل بازیافت"/></Button>
      <Border Background="#1C2D2B" CornerRadius="9" Padding="13" Margin="0,15,0,0"><StackPanel><TextBlock Tag="اسکن فقط خواندنی است" Foreground="#83D8BF" FontWeight="SemiBold" FontSize="12"/><TextBlock Tag="هیچ فایلی هنگام اسکن تغییر نمی‌کند. پاک‌سازی فقط با انتخاب و تأیید شما انجام می‌شود." Foreground="#A2B6B1" FontSize="11" TextWrapping="Wrap" LineHeight="20" Margin="0,8,0,0"/></StackPanel></Border>
-     <TextBlock Text="SPACIO  /  1.2" FontSize="9" Foreground="#5F7481" FlowDirection="LeftToRight" HorizontalAlignment="Center" Margin="0,14,0,0"/>
+     <Button x:Name="UpdateButton" Tag="بررسی آپدیت" Background="Transparent" Foreground="#85C6AE" FontSize="11" Margin="0,9,0,0" Padding="8,6"/>
+     <TextBlock x:Name="VersionLabel" FontSize="9" Foreground="#5F7481" FlowDirection="LeftToRight" HorizontalAlignment="Center" Margin="0,5,0,0"/>
     </StackPanel>
    </Grid>
   </Border>
-  <Grid Grid.Column="1" Margin="26,24,26,14">
+  <Grid Grid.Row="1" Grid.Column="1" Margin="26,24,26,14">
    <Grid.RowDefinitions><RowDefinition Height="76"/><RowDefinition Height="50"/><RowDefinition Height="121"/><RowDefinition Height="170"/><RowDefinition Height="*"/><RowDefinition Height="68"/></Grid.RowDefinitions>
    <Grid Grid.Row="0"><StackPanel><TextBlock Tag="فضای دیسک، زیر ذره‌بین." FontSize="26" FontWeight="SemiBold"/><TextBlock Tag="یک نمای روشن از فایل‌ها، پوشه‌ها و فضای مصرف‌شده" Foreground="#8DA0AD" Margin="0,7,0,0" FontSize="12"/></StackPanel><Button x:Name="LanguageButton" Content="English  ⇄" HorizontalAlignment="Right" VerticalAlignment="Top" Background="#253039" Padding="13,9" FlowDirection="LeftToRight"/></Grid>
    <Grid Grid.Row="1" Margin="0,0,0,8"><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
     <TextBox x:Name="PathBox" FlowDirection="LeftToRight" FontFamily="Consolas" FontSize="13"/>
     <Button x:Name="BrowseButton" Grid.Column="1" Tag="انتخاب پوشه" Margin="8,0,0,0"/>
     <Button x:Name="ScanButton" Grid.Column="2" Tag="باز کردن / اسکن" Margin="8,0,0,0" Background="#6BE2C4" Foreground="#102B25" FontWeight="SemiBold"/>
-    <Button x:Name="RescanButton" Grid.Column="3" Tag="اسکن مجدد" Margin="8,0,0,0"/>
+    <Button x:Name="RescanButton" Grid.Column="3" Tag="تازه‌سازی ↻" Margin="8,0,0,0"/>
     <Button x:Name="StopButton" Grid.Column="4" Tag="توقف" Margin="8,0,0,0" Visibility="Collapsed"/>
    </Grid>
    <UniformGrid Grid.Row="2" Columns="4" Margin="0,8,0,14">

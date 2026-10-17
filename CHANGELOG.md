@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.3.0
+
+- Automatically restore the last viewed saved scan at startup without walking the drive again, including existing 1.2 caches.
+- Add a green animated loading screen in Persian and English while the workspace is restored.
+- Rename Rescan to Refresh and verify that it persists file additions, deletions, moves, and size changes.
+- Wait for a completed scan to finish saving when the user closes the window during persistence.
+- Check official GitHub Releases at startup and every six hours while running, with a manual check button and an in-app update notification.
+- Download and install updates inside the app, verifying HTTPS origins, package size, SHA256, and executable version before replacement.
+- Restart after installation, preserve saved scans, retain the previous executable/config, and roll back config replacement on failure.
+- Add update integration checks, actual splash/startup checks, and a repeatable portable packaging script.
+
 ## 1.2.0
 
 - Persist completed scans and reopen saved results after restarting the application.

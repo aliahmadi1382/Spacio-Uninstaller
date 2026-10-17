@@ -22,9 +22,18 @@ namespace Spacio
             {
                 var scanner = new Scanner(); var token = CancellationToken.None;
                 var scan = scanner.Scan(root, token, null); var cache = new SnapshotCache(cachePath);
+                Directory.CreateDirectory(cachePath); File.WriteAllBytes(Path.Combine(cachePath, "corrupt.scan"), new byte[] { 1, 2, 3, 4, 5, 6, 7, 8 });
+                check(cache.LastPath() == null, "Startup ignores malformed cache headers instead of failing or scanning");
                 check(cache.Find(root, token) == null, "A new path has no cached result");
                 cache.Save(scan, token);
                 check(File.Exists(cache.FileFor(root)), "Completed scan is saved on disk");
+                check(new SnapshotCache(cachePath).LastPath() == root, "Upgrade from 1.2 discovers the latest saved scan without a session file");
+                cache.SaveLastPath(child);
+                check(new SnapshotCache(cachePath).LastPath() == child, "Last viewed folder survives a new application session");
+                var held = File.Open(Path.Combine(cachePath, "last-path.txt"), FileMode.Open, FileAccess.Read, FileShare.Read);
+                var releaseLock = System.Threading.Tasks.Task.Run(() => { Thread.Sleep(200); held.Dispose(); });
+                cache.SaveLastPath(root); releaseLock.Wait();
+                check(new SnapshotCache(cachePath).LastPath() == root, "Session persistence tolerates a temporary Windows sharing lock");
                 check(Object.ReferenceEquals(cache.Find(root, token).Snapshot, scan), "Repeat lookup reuses the in-memory snapshot");
                 var restarted = new SnapshotCache(cachePath); var restored = restarted.Find(root.ToUpperInvariant() + "\\", token);
                 check(restored != null && Scanner.SameTree(scan.Root, restored.Snapshot.Root), "A new cache instance restores the full tree with normalized case and trailing slash");
@@ -70,6 +79,12 @@ namespace Spacio
                 cache.Save(afterCleanup, token);
                 check(new SnapshotCache(cachePath).Find(root, token) != null, "A new scan can replace a corrupt cache atomically");
                 check(!Directory.EnumerateFiles(cachePath, "*.tmp").Any(), "Atomic writes leave no temporary files behind");
+                string offlinePath = Path.Combine(area, "Offline drive"); Directory.CreateDirectory(offlinePath);
+                File.WriteAllText(Path.Combine(offlinePath, "saved.txt"), "saved offline");
+                var offlineScan = scanner.Scan(offlinePath, token, null); cache.Save(offlineScan, token); cache.SaveLastPath(offlinePath);
+                Directory.Move(offlinePath, offlinePath + "-disconnected");
+                var offlineCache = new SnapshotCache(cachePath);
+                check(offlineCache.Find(offlineCache.LastPath(), token).Snapshot.Root.Bytes == offlineScan.Root.Bytes, "Startup can restore saved results even when the original directory is unavailable");
                 log.Add("All " + log.Count + " cache checks passed.");
                 File.WriteAllLines(report, log, new System.Text.UTF8Encoding(true)); return 0;
             }

@@ -25,5 +25,17 @@ changes it.
 - After pushing, verify the repository status and briefly report the result to
   the user in Persian, including the commit identifier when useful.
 
+## Distributing app updates
+
+The user wants other users to receive updates inside Spacio. For completed
+user-facing app changes, increment the assembly/file versions together, update
+`CHANGELOG.md`, build and run appropriate checks, and package with
+`tools/package.ps1`. Publish a stable GitHub Release on the matching version tag
+after pushing the tested source. Upload the versioned ZIP and checksum file to a
+draft first, then publish the complete release. Follow the naming and packaging
+contract documented in `README.md` so installed apps can discover and verify it.
+Keep older releases and their assets for rollback. Documentation-only changes
+need a commit and push but do not need an app release.
+
 This is a workflow for work performed in this project; it does not require a
 background watcher or a recurring automation.
