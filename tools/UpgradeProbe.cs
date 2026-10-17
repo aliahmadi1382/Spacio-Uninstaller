@@ -5,6 +5,8 @@ using System.IO;
 using System.Threading;
 using Spacio;
 
+[assembly: System.Runtime.Versioning.TargetFramework(".NETFramework,Version=v4.8")]
+
 internal static class UpgradeProbe
 {
     private static void Require(bool condition, string message) { if (!condition) throw new Exception(message); }
