@@ -112,10 +112,12 @@ namespace Spacio
                 Check(File.Exists(canary), "Recycle test never touches external canary");
                 string folderFixture = Path.Combine(fixture, "Recycle-folder-test");
                 FixtureFile(folderFixture, "nested\\small.txt", 14, 0);
+                Directory.SetLastWriteTimeUtc(Path.Combine(folderFixture, "nested"), DateTime.UtcNow.AddDays(-1));
+                Directory.SetLastWriteTimeUtc(folderFixture, DateTime.UtcNow.AddDays(-1));
                 var folderScan = scanner.Scan(fixture, CancellationToken.None, null);
                 var folderEntry = folderScan.Entries.Single(e => e.Path == folderFixture);
                 var folderResult = Recycler.RecycleAsync(new List<Entry> { folderEntry }, folderScan, IntPtr.Zero, CancellationToken.None).GetAwaiter().GetResult();
-                Check(folderResult.Count == 1 && folderResult[0].StartsWith("✓") && !Directory.Exists(folderFixture), "Windows Shell recycles a verified test folder and its descendants");
+                Check(folderResult.Count == 1 && folderResult[0].StartsWith("✓") && !Directory.Exists(folderFixture), "Windows Shell recycles a verified test folder and its descendants: " + String.Join(" ", folderResult));
                 string longRoot = Path.Combine(parent, "Long paths");
                 string longPath = FixtureFile(longRoot, new string('a', 95) + "\\" + new string('b', 95) + "\\" + new string('c', 95) + "\\long.txt", 37, 0);
                 var longScan = scanner.Scan(longRoot, CancellationToken.None, null);

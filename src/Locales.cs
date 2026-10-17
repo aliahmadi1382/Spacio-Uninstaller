@@ -9,6 +9,9 @@ namespace Spacio
     {
         public static bool Persian = true;
         private static readonly Dictionary<string, string> English = new Dictionary<string, string> {
+            {"مسیر پایش زنده", "Live monitoring folder"},
+            {"بررسی خودکار پوشه", "Checking folder automatically"},
+            {"تازه‌سازی پوشه", "Refreshing folder"},
             {"فقط مسیر کادر بالا و زیرپوشه‌هایش تازه‌سازی می‌شوند؛ با ورود به پوشه، این مسیر هم تغییر می‌کند.", "Refresh checks only the path above and its descendants. Opening a folder updates this path too."},
             {"نمایش در صفحهٔ کامل", "Open full page"},
             {"بازگشت به نمای کلی", "Back to overview"},

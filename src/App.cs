@@ -213,7 +213,10 @@ namespace Spacio
         {
             busy = value;
             foreach (var name in new [] { "ScanButton", "RescanButton", "BrowseButton", "LanguageButton" }) U<Button>(name).IsEnabled = !value;
-            U<TextBox>("PathBox").IsEnabled = !value;
+            bool canRefreshPath = !value || (refreshingAutomatically && !manualRefreshPending);
+            U<Button>("RescanButton").IsEnabled = canRefreshPath;
+            U<Button>("BrowseButton").IsEnabled = canRefreshPath;
+            U<TextBox>("PathBox").IsEnabled = canRefreshPath;
             U<Button>("StopButton").Visibility = value && scanning ? Visibility.Visible : Visibility.Collapsed;
             U<ProgressBar>("Activity").Visibility = value ? Visibility.Visible : Visibility.Collapsed;
             foreach (var child in U<StackPanel>("DriveList").Children.OfType<Button>()) child.IsEnabled = !value;
@@ -237,6 +240,14 @@ namespace Spacio
         private async void RememberLastPath(string path) { await SaveLastPathAsync(path); }
         public async Task ScanAsync(string path, bool forceRescan = false, bool savedOnly = false)
         {
+            if (manualRefreshPending) return;
+            if (forceRescan && refreshingAutomatically && activeRefreshTask != null)
+            {
+                manualRefreshPending = true;
+                try { refreshCancel.Cancel(); await activeRefreshTask; }
+                finally { manualRefreshPending = false; }
+                if (closing) return;
+            }
             if (busy) return;
             if (forceRescan && snapshot != null && !snapshot.Cancelled && Paths.Within(path, snapshot.Root.Path))
             {
@@ -359,6 +370,7 @@ namespace Spacio
                 if (closing || basis != snapshot || entry == null) return;
             }
             current = entry; U<TextBox>("PathBox").Text = entry.Path; U<TextBox>("SearchBox").Text = ""; category = null;
+            AttachLive(true);
             if (!snapshot.Cancelled && (cacheSaved || viewingCached)) RememberLastPath(entry.Path);
             SetMode(0);
         }

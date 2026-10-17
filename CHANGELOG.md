@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.4.2
+
+- Fix automatic startup, periodic and missed-notification checks refreshing a cached whole drive while a subfolder is open. Watch and reconcile only the visible folder; keep the surrounding saved tree and recalculate its totals.
+- Cancel obsolete automatic work when navigating to another folder, suppress its late progress messages and immediately show the new monitoring path.
+- Keep the path input, folder picker and manual Refresh usable during automatic work. A manual request cancels and awaits the automatic transaction before refreshing its requested path.
+- Keep an unavailable watched folder's saved view instead of falling back to a parent scan; validate watcher paths against junctions and offline placeholders.
+- Reproduce the 1.4.1 bug and verify the fix against identical isolated Adobe-shaped folders. Cover startup, periodic checks, notification overflow, navigation cancellation, manual supersession and real scoped filesystem events.
+- Preserve scan storage and cache format; stabilize the no-change test fixture with explicit directory timestamps.
+
 ## 1.4.1
 
 - Limit manual Refresh to the path in the input and its descendants, including when that folder belongs to a cached whole-drive scan. Recalculate ancestor totals from the refreshed subtree and saved siblings.

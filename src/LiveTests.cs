@@ -25,6 +25,10 @@ namespace Spacio
             Directory.CreateDirectory(folder);
             string first = Path.Combine(folder, "first.txt"), second = Path.Combine(folder, "second.mp3");
             File.WriteAllText(first, "before"); File.WriteAllText(second, "music");
+            // Explicit fixture dates avoid NTFS deferred directory timestamps from the writes
+            // above being mistaken for an external edit in the no-change assertion.
+            Directory.SetLastWriteTimeUtc(folder, DateTime.UtcNow.AddDays(-1));
+            Directory.SetLastWriteTimeUtc(root, DateTime.UtcNow.AddDays(-1));
             var token = CancellationToken.None;
             try
             {
@@ -183,7 +187,7 @@ namespace Spacio
             check(snapshot.Root.FileCount == 2, "Live monitoring follows a newly scanned path after switching roots");
             StopLiveUpdates();
             liveEnabled = false;
-            string scope = Path.Combine(newRoot, "Only this folder"); Directory.CreateDirectory(scope);
+            string scope = Path.Combine(newRoot, "ProgramData", "Adobe", "ARM", "Acrobat_24.004.20220"); Directory.CreateDirectory(scope);
             string inside = Path.Combine(scope, "inside.txt"), outside = Path.Combine(newRoot, "outside.txt");
             File.WriteAllText(inside, "before"); File.WriteAllText(outside, "outside");
             await ScanAsync(newRoot, true);
@@ -200,6 +204,66 @@ namespace Spacio
             var persistedScope = new SnapshotCache(cache.DirectoryPath).Find(newRoot, CancellationToken.None).Snapshot;
             check(persistedScope.Entries.Single(e => e.Path == outside).Bytes == 7 && persistedScope.Entries.Single(e => e.Path == inside).Bytes == 18,
                 "Scoped changes persist without replacing unrefreshed sibling metadata");
+            File.AppendAllText(inside, " while closed");
+            await ScanAsync(scope, false, true);
+            StartLiveUpdates(); liveTimer.Stop();
+            check(liveMonitor.Root == scope && snapshot.Root.Path == newRoot, "Restoring a deep folder monitors that folder, even inside a saved whole-drive tree");
+            await LiveTickAsync();
+            check(snapshot.Entries.Single(e => e.Path == inside).Bytes == new FileInfo(inside).Length && snapshot.Entries.Single(e => e.Path == outside).Bytes == 7,
+                "Startup automatic validation updates only the restored Adobe-shaped folder and preserves edited siblings");
+            File.AppendAllText(inside, " periodic"); File.AppendAllText(outside, " still outside");
+            nextLiveAttempt = DateTime.MinValue; lastFullCheck = DateTime.UtcNow.AddMinutes(-6);
+            await LiveTickAsync();
+            check(snapshot.Entries.Single(e => e.Path == inside).Bytes == new FileInfo(inside).Length && snapshot.Entries.Single(e => e.Path == outside).Bytes == 7,
+                "Five-minute automatic validation stays inside the visible folder");
+            File.AppendAllText(inside, " overflow");
+            for (int i = 0; i < 4100; i++) liveMonitor.Enqueue(Path.Combine(scope, "event-" + i));
+            nextLiveAttempt = DateTime.MinValue; await LiveTickAsync();
+            check(snapshot.Entries.Single(e => e.Path == inside).Bytes == new FileInfo(inside).Length && snapshot.Entries.Single(e => e.Path == outside).Bytes == 7,
+                "Notification overflow recovers only the watched folder, without widening to the cached root");
+
+            // Hold only the generated cache so the background transaction reliably remains active.
+            // Navigating must cancel it, and a manual Refresh must be able to supersede it.
+            Navigate(snapshot.Root); await RefreshRowsAsync();
+            var navigationBasis = snapshot;
+            using (var held = File.Open(cache.FileFor(newRoot), FileMode.Open, FileAccess.Read, FileShare.Read))
+            {
+                var oldRefresh = RefreshSnapshotAsync(false);
+                await Task.Delay(120);
+                check(refreshingAutomatically && U<Button>("RescanButton").IsEnabled && U<TextBox>("PathBox").IsEnabled,
+                    "Automatic refresh leaves manual Refresh and its target path usable");
+                Navigate(snapshot.Entries.Single(e => e.Path == scope));
+                await oldRefresh;
+                check(snapshot == navigationBasis && liveMonitor.Root == scope && current.Path == scope && nextLiveAttempt < DateTime.UtcNow,
+                    "Entering a subfolder cancels the old whole-tree background job and schedules only the new scope");
+                check(U<TextBlock>("StatusText").Text.Contains(scope),
+                    "Cancelled old progress does not replace the new folder status");
+            }
+            nextLiveAttempt = DateTime.MinValue; await LiveTickAsync();
+            Navigate(snapshot.Root); await RefreshRowsAsync();
+            using (var held = File.Open(cache.FileFor(newRoot), FileMode.Open, FileAccess.Read, FileShare.Read))
+            {
+                var automatic = RefreshSnapshotAsync(false); await Task.Delay(120);
+                U<TextBox>("PathBox").Text = scope + Path.DirectorySeparatorChar;
+                U<Button>("RescanButton").RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                await AwaitLive(() => !busy && !manualRefreshPending);
+                await automatic;
+                check(current.Path == scope && liveMonitor.Root == scope && snapshot.Entries.Single(e => e.Path == outside).Bytes == 7,
+                    "The actual Refresh button supersedes an active automatic whole-tree job with the typed subfolder only");
+            }
+            File.AppendAllText(inside, " live"); liveTimer.Start();
+            await AwaitLive(() => !busy && snapshot.Entries.Single(e => e.Path == inside).Bytes == new FileInfo(inside).Length);
+            check(snapshot.Entries.Single(e => e.Path == outside).Bytes == 7, "Real events continue updating the focused folder without reading siblings");
+            liveTimer.Stop();
+            Directory.Move(scope, scope + "-offline"); var offlineBasis = snapshot;
+            try
+            {
+                nextLiveAttempt = DateTime.MinValue; liveMonitor.RequireFull(); await LiveTickAsync();
+                check(snapshot == offlineBasis && current.Path == scope && U<TextBox>("PathBox").Text == scope,
+                    "An unavailable focused folder retains its saved view without falling back to its parent");
+            }
+            finally { Directory.Move(scope + "-offline", scope); }
+            StopLiveUpdates();
         }
     }
 }

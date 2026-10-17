@@ -54,6 +54,11 @@ Unchanged validation must retain the original scan timestamp and cache bytes.
 Manual Refresh must only rescan the path shown in the path field and its
 descendants. Folder navigation must update that field. Recalculate ancestor
 totals from the cached tree without scanning siblings or widening to the drive.
+Automatic monitoring, startup reconciliation, periodic validation and overflow
+recovery must also follow the currently viewed folder, not its cached ancestor.
+Changing folders must cancel an obsolete automatic refresh and retarget monitoring.
+Manual Refresh must be able to supersede an active automatic refresh. An
+unavailable watched folder must retain the saved view without widening its scope.
 Verify upgrades with
 `tools/verify-upgrade.ps1`, which checks cache bytes, the original scan timestamp,
 user-file contents, and restoration in the newly installed app.
