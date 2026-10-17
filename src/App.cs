@@ -570,6 +570,7 @@ namespace Spacio
         [STAThread]
         public static int Main(string[] args)
         {
+            if (args.Length > 1 && args[0] == "--loading-smoke") return Startup.CheckMotion(args[1]);
             if (args.Length > 1 && args[0] == "--apply-update") return UpdateInstaller.Run(args[1]);
             if (args.Length > 1 && args[0] == "--update-test") return UpdateTests.Run(args[1]);
             if (args.Length > 1 && args[0] == "--update-live-test") return UpdateTests.Live(args[1]);

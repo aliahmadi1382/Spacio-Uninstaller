@@ -32,4 +32,8 @@ $startupProcess = Start-Process -FilePath $exePath -ArgumentList @('--startup-sm
 if (-not $startupProcess.WaitForExit(60000)) { throw 'Startup check exceeded 60 seconds.' }
 if ($startupProcess.ExitCode -ne 0 -or -not (Test-Path -LiteralPath ($previewPrefix + '.startup.ok.txt'))) { throw 'Loading-screen startup check failed.' }
 Get-Content -LiteralPath ($previewPrefix + '.startup.ok.txt')
+$motionProcess = Start-Process -FilePath $exePath -ArgumentList @('--loading-smoke', ('"' + $previewPrefix + '"')) -WindowStyle Hidden -PassThru
+if (-not $motionProcess.WaitForExit(30000)) { throw 'Live loading animation check exceeded 30 seconds.' }
+if ($motionProcess.ExitCode -ne 0 -or -not (Test-Path -LiteralPath ($previewPrefix + '.motion.txt'))) { throw ('Live animation check failed. Inspect ' + $previewPrefix + '.motion.error.txt') }
+Get-Content -LiteralPath ($previewPrefix + '.motion.txt')
 Write-Output ('Screenshots: ' + $previewPrefix + '-en.png and -fa.png')

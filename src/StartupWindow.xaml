@@ -1,33 +1,53 @@
 <Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
- Title="Spacio" Width="640" Height="420" ResizeMode="NoResize" WindowStyle="None" WindowStartupLocation="CenterScreen"
- Background="#0E1915" Foreground="#E6F4EC" FontFamily="Segoe UI, Tahoma" UseLayoutRounding="True">
- <Border Background="#0E1915" BorderBrush="#345745" BorderThickness="1" Padding="30">
+ Title="Spacio" Width="680" Height="460" ResizeMode="NoResize" WindowStyle="None" WindowStartupLocation="CenterScreen"
+ Background="#091610" Foreground="#E6F4EC" FontFamily="Segoe UI, Tahoma" UseLayoutRounding="True">
+ <Border Background="#091610" BorderBrush="#315840" BorderThickness="1" ClipToBounds="True">
   <Grid>
-   <Grid.RowDefinitions><RowDefinition Height="30"/><RowDefinition Height="*"/><RowDefinition Height="65"/></Grid.RowDefinitions>
-   <Grid><TextBlock Text="S P A C I O   /   S T O R A G E" Foreground="#7BA38E" FontSize="10" VerticalAlignment="Center"/><Button x:Name="CloseSplash" Content="×" HorizontalAlignment="Right" Width="28" Height="28" FontSize="20" Background="Transparent" Foreground="#92B2A0" BorderThickness="0" Cursor="Hand"/></Grid>
-   <Grid Grid.Row="1">
-    <Ellipse Width="270" Height="270" HorizontalAlignment="Center" VerticalAlignment="Center" IsHitTestVisible="False">
-     <Ellipse.Fill><RadialGradientBrush><GradientStop Color="#224F38" Offset="0"/><GradientStop Color="#0E1915" Offset="1"/></RadialGradientBrush></Ellipse.Fill>
+   <Canvas IsHitTestVisible="False" ClipToBounds="True">
+    <Ellipse x:Name="AuroraA" Width="560" Height="380" Canvas.Left="-100" Canvas.Top="-140" RenderTransformOrigin="0.5,0.5">
+     <Ellipse.Fill><RadialGradientBrush><GradientStop Color="#334AD58A" Offset="0"/><GradientStop Color="#004AD58A" Offset="1"/></RadialGradientBrush></Ellipse.Fill>
     </Ellipse>
-    <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
-     <Grid Width="100" Height="100" Margin="0,0,0,14">
-      <Ellipse Stroke="#37654B" StrokeThickness="1" Margin="0"/>
-      <Ellipse Stroke="#609A74" StrokeThickness="1" Margin="8" Opacity="0.5"/>
-      <Image x:Name="SplashLogo" Width="68" Height="68"/>
-      <Ellipse Width="8" Height="8" Fill="#9BF0AB" VerticalAlignment="Top" HorizontalAlignment="Center" Margin="0,-3,0,0">
-       <Ellipse.Triggers><EventTrigger RoutedEvent="Loaded"><BeginStoryboard><Storyboard RepeatBehavior="Forever" AutoReverse="True"><DoubleAnimation Storyboard.TargetProperty="Opacity" From="0.3" To="1" Duration="0:0:1"/></Storyboard></BeginStoryboard></EventTrigger></Ellipse.Triggers>
-      </Ellipse>
+    <Ellipse x:Name="AuroraB" Width="570" Height="440" Canvas.Left="300" Canvas.Top="90" RenderTransformOrigin="0.5,0.5">
+     <Ellipse.Fill><RadialGradientBrush><GradientStop Color="#2858D6B4" Offset="0"/><GradientStop Color="#0058D6B4" Offset="1"/></RadialGradientBrush></Ellipse.Fill>
+    </Ellipse>
+    <Path x:Name="FlowLineA" Data="M -80,305 C 110,80 170,400 390,215 S 660,120 790,0" Stroke="#215138" StrokeThickness="1"/>
+    <Path x:Name="FlowLineB" Data="M -50,380 C 100,190 260,410 480,270 S 640,190 780,80" Stroke="#163E2B" StrokeThickness="1"/>
+    <Canvas x:Name="AmbientParticles" Width="680" Height="460"/>
+   </Canvas>
+   <Grid Margin="30">
+    <Grid.RowDefinitions><RowDefinition Height="30"/><RowDefinition Height="*"/><RowDefinition Height="65"/></Grid.RowDefinitions>
+    <Grid><TextBlock Text="S P A C I O   /   S T O R A G E" Foreground="#84B497" FontSize="10" VerticalAlignment="Center"/><Button x:Name="CloseSplash" Content="×" HorizontalAlignment="Right" Width="28" Height="28" FontSize="20" Background="Transparent" Foreground="#92B2A0" BorderThickness="0" Cursor="Hand"/></Grid>
+    <StackPanel Grid.Row="1" VerticalAlignment="Center" HorizontalAlignment="Center">
+     <Grid Width="210" Height="210" IsHitTestVisible="False">
+      <Ellipse x:Name="LogoGlow" Width="210" Height="210" RenderTransformOrigin="0.5,0.5"><Ellipse.Fill><RadialGradientBrush><GradientStop Color="#555BE09A" Offset="0"/><GradientStop Color="#005BE09A" Offset="1"/></RadialGradientBrush></Ellipse.Fill></Ellipse>
+      <Ellipse Stroke="#284B35" StrokeThickness="1" Margin="19"/>
+      <Ellipse Stroke="#244D36" StrokeThickness="1" Margin="36" StrokeDashArray="2,7"/>
+      <Canvas x:Name="OuterOrbit" Width="210" Height="210" RenderTransformOrigin="0.5,0.5">
+       <Path Data="M 105,19 A 86,86 0 0 1 187,79" Stroke="#8BEAB0" StrokeThickness="2" StrokeStartLineCap="Round" StrokeEndLineCap="Round"/>
+       <Ellipse Width="8" Height="8" Fill="#B4FFD0" Canvas.Left="183" Canvas.Top="75"/>
+       <Ellipse Width="5" Height="5" Fill="#4BBD7B" Canvas.Left="47" Canvas.Top="167"/>
+      </Canvas>
+      <Canvas x:Name="InnerOrbit" Width="210" Height="210" RenderTransformOrigin="0.5,0.5">
+       <Path Data="M 105,174 A 69,69 0 0 1 36,105" Stroke="#48BD8C" StrokeThickness="2" StrokeStartLineCap="Round" StrokeEndLineCap="Round"/>
+       <Rectangle Width="6" Height="6" RadiusX="2" RadiusY="2" Fill="#75EAB5" Canvas.Left="33" Canvas.Top="102"/>
+      </Canvas>
+      <Grid x:Name="FloatingLogo" Width="94" Height="94" RenderTransformOrigin="0.5,0.5">
+       <Image x:Name="SplashLogo" Width="88" Height="88"/>
+      </Grid>
      </Grid>
-     <TextBlock Text="Spacio" FontSize="38" FontWeight="SemiBold" HorizontalAlignment="Center"/>
-     <TextBlock x:Name="SplashTagline" Foreground="#A0C2AD" FontSize="13" HorizontalAlignment="Center" Margin="0,7,0,0"/>
+     <TextBlock Text="Spacio" FontSize="38" FontWeight="SemiBold" HorizontalAlignment="Center" Margin="0,-5,0,0"/>
+     <TextBlock x:Name="SplashTagline" Foreground="#A0C2AD" FontSize="13" HorizontalAlignment="Center" Margin="0,6,0,10"/>
     </StackPanel>
-   </Grid>
-   <Grid Grid.Row="2"><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
-    <Border Height="3" Background="#213B2B" CornerRadius="1" ClipToBounds="True">
-     <Grid><Border Width="120" HorizontalAlignment="Left" CornerRadius="1"><Border.Background><LinearGradientBrush StartPoint="0,0" EndPoint="1,0"><GradientStop Color="#213B2B" Offset="0"/><GradientStop Color="#8ADD9B" Offset="0.5"/><GradientStop Color="#213B2B" Offset="1"/></LinearGradientBrush></Border.Background><Border.RenderTransform><TranslateTransform X="-120"/></Border.RenderTransform><Border.Triggers><EventTrigger RoutedEvent="Loaded"><BeginStoryboard><Storyboard RepeatBehavior="Forever"><DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.X)" From="-120" To="580" Duration="0:0:1.8"/></Storyboard></BeginStoryboard></EventTrigger></Border.Triggers></Border></Grid>
-    </Border>
-    <TextBlock x:Name="SplashStatus" Grid.Row="1" FontSize="11" Foreground="#98B9A4" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-    <Grid Grid.Row="2"><TextBlock x:Name="SplashFootnote" Foreground="#60816C" FontSize="10"/><TextBlock x:Name="SplashVersion" HorizontalAlignment="Right" Foreground="#60816C" FontSize="10"/></Grid>
+    <Grid Grid.Row="2"><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+     <Border Height="3" Background="#213B2B" CornerRadius="1" ClipToBounds="True"><Grid>
+      <Border x:Name="LoadingSweep" Width="150" HorizontalAlignment="Left" CornerRadius="1"><Border.Background><LinearGradientBrush StartPoint="0,0" EndPoint="1,0"><GradientStop Color="#00213B2B" Offset="0"/><GradientStop Color="#A3F4B9" Offset="0.5"/><GradientStop Color="#00213B2B" Offset="1"/></LinearGradientBrush></Border.Background></Border>
+     </Grid></Border>
+     <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+      <Ellipse x:Name="ActivityDot" Width="5" Height="5" Fill="#8ADD9B" Margin="0,0,9,0"/>
+      <TextBlock x:Name="SplashStatus" FontSize="11" Foreground="#A2C7B0"/>
+     </StackPanel>
+     <Grid Grid.Row="2"><TextBlock x:Name="SplashFootnote" Foreground="#6A957B" FontSize="10"/><TextBlock x:Name="SplashVersion" HorizontalAlignment="Right" Foreground="#6A957B" FontSize="10"/></Grid>
+    </Grid>
    </Grid>
   </Grid>
  </Border>

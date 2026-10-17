@@ -39,3 +39,14 @@ need a commit and push but do not need an app release.
 
 This is a workflow for work performed in this project; it does not require a
 background watcher or a recurring automation.
+
+## Preserve saved scans across updates
+
+The user explicitly requires scans to survive application updates. Keep their
+storage independent of the executable/version directory. Updates must not remove
+or overwrite `%LOCALAPPDATA%\Spacio\Scans`, preferences, or scanned user files.
+Keep existing cache formats readable. If a future format change requires a
+migration, preserve the original data until a complete replacement is verified;
+never substitute an automatic rescan for a saved result. Verify upgrades with
+`tools/verify-upgrade.ps1`, which checks cache bytes, the original scan timestamp,
+user-file contents, and restoration in the newly installed app.

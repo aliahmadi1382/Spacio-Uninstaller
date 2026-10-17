@@ -15,6 +15,8 @@ namespace Spacio
             {"نتیجهٔ ذخیره‌شده در دسترس نیست؛ برای شروع اسکن را بزنید.", "Saved result unavailable. Choose Open / scan to start."},
             {"فضای بیشتر، خیال آسوده‌تر.", "A little more space. A little more clarity."},
             {"در حال بازگرداندن فضای کار شما…", "Restoring your workspace…"},
+            {"در حال آماده‌سازی برنامه…", "Preparing your workspace…"},
+            {"فضای کار شما آماده است", "Your workspace is ready"},
             {"اسکن‌های شما ماندگارند", "Your scans stay with you"},
             {"بررسی آپدیت", "Check for updates"}, {"در حال بررسی آپدیت…", "Checking for updates…"},
             {"دریافت نسخهٔ رسمی از GitHub", "Checking the official release on GitHub"},

@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.3.2
+
+- Replace the subtle startup effect with continuous rotating rings, a floating leaf logo, moving green light, drifting particles, and a light sweep.
+- Run the loading window on its own UI dispatcher so animation continues during main-window initialization and scan restoration.
+- Add a short 1.5-second introduction and a soft transition into the workspace; display the ready state once restoration finishes.
+- Verify actual rendered animation frames while the main UI is blocked and stop the animation dispatcher on close.
+- Extend the real-release upgrade check to verify unchanged saved scans, scan timestamps, and scanned files, then restore the old result in the new app without rescanning.
+
 ## 1.3.1
 
 - Update drive free-space cards after a successful Refresh, alongside the persisted file/folder results.
