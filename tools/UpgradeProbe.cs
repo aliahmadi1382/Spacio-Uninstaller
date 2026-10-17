@@ -10,10 +10,10 @@ using Spacio;
 internal static class UpgradeProbe
 {
     private static void Require(bool condition, string message) { if (!condition) throw new Exception(message); }
-    private static bool WaitForFile(string path)
+    private static bool WaitForFile(string path, int timeoutMilliseconds = 10000)
     {
         var watch = Stopwatch.StartNew();
-        while (!File.Exists(path) && watch.ElapsedMilliseconds < 10000) Thread.Sleep(50);
+        while (!File.Exists(path) && watch.ElapsedMilliseconds < timeoutMilliseconds) Thread.Sleep(50);
         return File.Exists(path);
     }
     public static int Main(string[] args)
@@ -43,7 +43,8 @@ internal static class UpgradeProbe
                     {
                         File.WriteAllText(signal + ".exit", "exit");
                         Require(helper.WaitForExit(20000) && helper.ExitCode == 0, "Installation did not finish successfully.");
-                        Require(WaitForFile(marker + ".startup.ok.txt") && System.Reflection.AssemblyName.GetAssemblyName(target).Version == release.Version, "Upgraded application did not restore the old saved scan after restarting.");
+                        // This now starts the full WPF UI and restores a scan, rather than the tiny version probe.
+                        Require(WaitForFile(marker + ".startup.ok.txt", 30000) && System.Reflection.AssemblyName.GetAssemblyName(target).Version == release.Version, "Upgraded application did not restore the old saved scan after restarting.");
                         Require(Updates.Hash(cache.FileFor(data)) == scanHash && Updates.Hash(originalFile) == originalHash, "Update changed the saved scan or the scanned file.");
                         Require(new SnapshotCache(cachePath).Find(data, CancellationToken.None).Snapshot.StartedUtc == snapshot.StartedUtc, "Original scan timestamp was not preserved.");
                     }
