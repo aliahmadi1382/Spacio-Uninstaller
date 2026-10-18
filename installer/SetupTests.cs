@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Win32;
 using Spacio;
@@ -25,6 +26,26 @@ namespace SpacioSetup
             if (Directory.Exists(scans)) paths.AddRange(Directory.GetFiles(scans));
             if (File.Exists(Path.Combine(data, "language.txt"))) paths.Add(Path.Combine(data, "language.txt"));
             return paths.ToDictionary(p => p, SetupEngine.Hash);
+        }
+        private static void AwaitFixtureFiles(InstallContext context)
+        {
+            // Generated executables can still have transient readers after replacement
+            // or shell/UI inspection. Wait only between fixture operations; intentional
+            // locked-file rejection tests below still exercise immediate refusal.
+            var watch = Stopwatch.StartNew();
+            while (true)
+            {
+                try
+                {
+                    foreach (string name in SetupEngine.OwnedNames)
+                    {
+                        string path = Path.Combine(context.Directory, name);
+                        if (File.Exists(path)) using (File.Open(path, FileMode.Open, FileAccess.ReadWrite, FileShare.None)) { }
+                    }
+                    return;
+                }
+                catch (IOException) { if (watch.ElapsedMilliseconds >= 15000) throw; Thread.Sleep(100); }
+            }
         }
         internal static int Run(string report, string probe, bool publicUpgrade)
         {
@@ -48,6 +69,7 @@ namespace SpacioSetup
                 using (var key = Registry.CurrentUser.OpenSubKey(context.RegistryPath))
                     check(key != null && Convert.ToString(key.GetValue("DisplayVersion")) == SetupEngine.Version.ToString(3) && Convert.ToString(key.GetValue("UninstallString")).Contains("--uninstall"), "Windows Installed apps registration contains version and uninstaller");
                 string executableHash = SetupEngine.Hash(context.Executable), linkHash = SetupEngine.Hash(context.DesktopLink), installerHash = SetupEngine.Hash(Path.Combine(context.Directory, "Spacio.Setup.exe"));
+                AwaitFixtureFiles(context);
                 SetupEngine.Install(context, true);
                 check(SetupEngine.Hash(context.Executable) == executableHash && Directory.GetFiles(Path.GetDirectoryName(context.DesktopLink)).Length == 1, "Reinstall keeps one installation and one desktop shortcut");
                 linkHash = SetupEngine.Hash(context.DesktopLink);
@@ -97,6 +119,7 @@ namespace SpacioSetup
                 check(File.Exists(context.Executable) && File.Exists(context.DesktopLink), "Failed uninstall restores installed files and shortcuts");
                 using (var window = new SetupWindow(context, false, true))
                 { window.SetLanguage(false); window.SavePreview(report + "-en.png"); window.SetLanguage(true); window.SavePreview(report + "-fa.png"); window.Close(); }
+                AwaitFixtureFiles(context);
                 SetupEngine.Uninstall(context);
                 check(SetupEngine.OwnedNames.All(n => !File.Exists(Path.Combine(context.Directory, n))) && !File.Exists(context.DesktopLink) && !File.Exists(context.MenuLink), "Uninstall removes only installed program files and owned shortcuts");
                 using (var key = Registry.CurrentUser.OpenSubKey(context.RegistryPath)) check(key == null, "Uninstall removes its own Installed apps entry");
