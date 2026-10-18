@@ -56,7 +56,7 @@ namespace Spacio
         }
         private async Task OpenCleanupPage(bool apps, UninstallSession leftovers = null)
         {
-            if (cleanupCancel != null || (busy && !refreshingAutomatically)) return;
+            if (installingUpdate || cleanupCancel != null || (busy && !refreshingAutomatically)) return;
             if (leftoverView != leftovers) cleanupItems.Clear();
             cleanupPageOpen = true; cleanupAppsPage = apps; cleanupFamily = ""; leftoverView = leftovers;
             if (leftovers != null) U<TextBox>("CleanupSearch").Text = "";
@@ -171,7 +171,7 @@ namespace Spacio
         }
         private async Task ReviewSelectedCleanup(Action<Window> onLoaded = null)
         {
-            if (reviewingCleanup || cleanupCancel != null || (busy && !refreshingAutomatically) || snapshot == null || snapshot.Cancelled) return;
+            if (installingUpdate || reviewingCleanup || cleanupCancel != null || (busy && !refreshingAutomatically) || snapshot == null || snapshot.Cancelled) return;
             var paths = Safety.CollapseSelection(Selected().Select(r => r.Entry)).Select(e => e.Path).ToArray(); if (paths.Length == 0) return;
             reviewingCleanup = true;
             try

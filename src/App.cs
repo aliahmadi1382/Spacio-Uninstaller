@@ -213,9 +213,10 @@ namespace Spacio
         }
         private void SetBusy(bool value, bool scanning)
         {
+            value |= installingUpdate;
             busy = value;
             foreach (var name in new [] { "ScanButton", "RescanButton", "BrowseButton", "LanguageButton" }) U<Button>(name).IsEnabled = !value;
-            bool canRefreshPath = !value || (refreshingAutomatically && !manualRefreshPending);
+            bool canRefreshPath = !installingUpdate && (!value || (refreshingAutomatically && !manualRefreshPending));
             U<Button>("RescanButton").IsEnabled = canRefreshPath;
             U<Button>("BrowseButton").IsEnabled = canRefreshPath;
             U<TextBox>("PathBox").IsEnabled = canRefreshPath;
@@ -242,7 +243,7 @@ namespace Spacio
         private async void RememberLastPath(string path) { await SaveLastPathAsync(path); }
         public async Task ScanAsync(string path, bool forceRescan = false, bool savedOnly = false)
         {
-            if (manualRefreshPending) return;
+            if (installingUpdate || manualRefreshPending) return;
             if (forceRescan && refreshingAutomatically && activeRefreshTask != null)
             {
                 manualRefreshPending = true;
@@ -470,7 +471,7 @@ namespace Spacio
             U<Button>("RevealButton").IsEnabled = selected.Count == 1;
             string reason = snapshot == null || snapshot.Cancelled ? "ابتدا اسکن کامل انجام دهید" : selected.Select(e =>
                 Paths.Equal(e.Path, snapshot.Root.Path) ? "ریشهٔ اسکن قابل حذف نیست" : ReviewedRemoval.ProtectedReason(e.Path)).FirstOrDefault(x => x != null);
-            U<Button>("RecycleButton").IsEnabled = (!busy || refreshingAutomatically) && !reviewingCleanup && cleanupCancel == null && snapshot != null && !snapshot.Cancelled && selected.Count > 0;
+            U<Button>("RecycleButton").IsEnabled = !installingUpdate && (!busy || refreshingAutomatically) && !reviewingCleanup && cleanupCancel == null && snapshot != null && !snapshot.Cancelled && selected.Count > 0;
             U<Button>("RecycleButton").ToolTip = L.T(reason ?? "موارد انتخاب‌شده پیش از تأیید حذف دوباره بررسی می‌شوند");
             U<TextBlock>("SelectionInfo").Text = selected.Count == 0 ? L.T("انتخابی ندارید") : selected.Count.ToString("N0") + " " + L.T("انتخاب‌شده") + "  ·  " + Formats.Size(selected.Sum(x => x.Bytes)) + (reason == null ? "" : "  ·  " + L.T(reason));
         }

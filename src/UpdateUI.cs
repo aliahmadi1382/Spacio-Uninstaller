@@ -17,6 +17,12 @@ namespace Spacio
         private CancellationTokenSource downloadCancel;
         private DispatcherTimer updateTimer;
 
+        private bool CanInstallUpdate
+        {
+            get { return availableUpdate != null && !installingUpdate && !checkingUpdate && !closing &&
+                !reviewingCleanup && cleanupCancel == null && !savingScan && !manualRefreshPending && (!busy || refreshingAutomatically); }
+        }
+
         private void InitializeUpdates()
         {
             U<TextBlock>("VersionLabel").Text = "SPACIO  /  " + Updates.VersionText;
@@ -46,7 +52,11 @@ namespace Spacio
             U<TextBlock>("UpdateDetail").Text = L.T(updateDetail);
             U<Button>("UpdateButton").Content = L.T(checkingUpdate ? "در حال بررسی آپدیت…" : "بررسی آپدیت");
             U<Button>("UpdateButton").IsEnabled = !checkingUpdate && !installingUpdate;
-            U<Button>("InstallUpdateButton").IsEnabled = !busy && !installingUpdate && !checkingUpdate;
+            U<Button>("InstallUpdateButton").IsEnabled = CanInstallUpdate;
+            U<Button>("InstallUpdateButton").ToolTip = L.T(CanInstallUpdate ?
+                "بررسی خودکار برای نصب آپدیت متوقف می‌شود؛ نتیجهٔ ذخیره‌شده حفظ می‌شود." :
+                checkingUpdate ? "در حال بررسی آپدیت…" :
+                "پس از پایان اسکن دستی یا پاک‌سازی، نصب آپدیت فعال می‌شود.");
             U<Button>("InstallUpdateButton").Visibility = availableUpdate != null && !installingUpdate ? Visibility.Visible : Visibility.Collapsed;
             U<Button>("DismissUpdateButton").Content = L.T(installingUpdate ? "لغو دانلود" : "بعداً");
             U<ProgressBar>("UpdateProgress").Visibility = installingUpdate ? Visibility.Visible : Visibility.Collapsed;
@@ -75,20 +85,31 @@ namespace Spacio
             }
             finally { checkingUpdate = false; if (!closing) UpdateLabels(); }
         }
-        private async Task InstallUpdateAsync()
+        private async Task InstallUpdateAsync(Func<ReleaseInfo, IProgress<int>, CancellationToken, Task<string>> download = null)
         {
-            if (availableUpdate == null || busy || installingUpdate || checkingUpdate || closing) return;
-            installingUpdate = true; SetBusy(true, false);
+            if (!CanInstallUpdate) return;
+            // Own the busy state before yielding, so neither a timer tick nor another
+            // user action can start work while the cancelled refresh finishes saving.
+            bool resumeTimer = liveTimer != null && liveTimer.IsEnabled;
+            installingUpdate = true;
             downloadCancel = CancellationTokenSource.CreateLinkedTokenSource(updateLifetime.Token);
-            updateState = "در حال دانلود آپدیت…"; updateDetail = "فایل دریافت و صحت آن بررسی می‌شود؛ اسکن‌های شما حفظ می‌شوند.";
-            U<ProgressBar>("UpdateProgress").Value = 0; UpdateLabels();
+            var token = downloadCancel.Token;
+            updateState = "آماده‌سازی آپدیت…"; updateDetail = "بررسی خودکار برای نصب آپدیت متوقف می‌شود؛ نتیجهٔ ذخیره‌شده حفظ می‌شود.";
+            U<ProgressBar>("UpdateProgress").Value = 0;
+            U<ProgressBar>("UpdateProgress").IsIndeterminate = true;
+            StopLiveUpdates(); SetBusy(true, false); UpdateLiveToggle(); SetStatus(L.T(updateState));
             try
             {
+                if (refreshingAutomatically && activeRefreshTask != null) await activeRefreshTask;
+                token.ThrowIfCancellationRequested();
+                SetLiveState("پایش زنده تا پایان آپدیت متوقف است");
+                updateState = "در حال دانلود آپدیت…"; updateDetail = "فایل دریافت و صحت آن بررسی می‌شود؛ اسکن‌های شما حفظ می‌شوند.";
+                U<ProgressBar>("UpdateProgress").IsIndeterminate = false; UpdateLabels(); SetStatus(L.T(updateState));
                 string target = System.Reflection.Assembly.GetExecutingAssembly().Location;
                 UpdateInstaller.CheckWritable(target);
                 var progress = new Progress<int>(value => { if (!closing && installingUpdate) U<ProgressBar>("UpdateProgress").Value = value; });
-                string stage = await Updates.DownloadAsync(availableUpdate, progress, downloadCancel.Token);
-                downloadCancel.Token.ThrowIfCancellationRequested();
+                string stage = await (download ?? Updates.DownloadAsync)(availableUpdate, progress, token);
+                token.ThrowIfCancellationRequested();
                 updateState = "در حال نصب و باز کردن دوبارهٔ برنامه…"; UpdateLabels();
                 using (var helper = UpdateInstaller.Start(stage, target, Process.GetCurrentProcess())) { }
                 installingUpdate = false; SetBusy(false, false); Window.Close();
@@ -98,7 +119,15 @@ namespace Spacio
             finally
             {
                 downloadCancel.Dispose(); downloadCancel = null; installingUpdate = false;
-                if (!closing) { SetBusy(false, false); UpdateLabels(); }
+                if (!closing)
+                {
+                    SetBusy(false, false); SetStatus(L.T(updateState));
+                    // Reconcile missed changes in the currently viewed folder, preserving
+                    // the user's explicit Pause live choice and the saved result.
+                    AttachLive(true);
+                    if (resumeTimer && liveTimer != null) liveTimer.Start();
+                    UpdateLiveToggle(); UpdateLabels();
+                }
             }
         }
         public void ShowUpdatePreview()

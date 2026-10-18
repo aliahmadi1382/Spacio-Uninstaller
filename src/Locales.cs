@@ -9,6 +9,10 @@ namespace Spacio
     {
         public static bool Persian = true;
         private static readonly Dictionary<string, string> English = new Dictionary<string, string> {
+            {"آماده‌سازی آپدیت…", "Preparing update…"},
+            {"بررسی خودکار برای نصب آپدیت متوقف می‌شود؛ نتیجهٔ ذخیره‌شده حفظ می‌شود.", "Automatic checking pauses for the update; your saved result is retained."},
+            {"پس از پایان اسکن دستی یا پاک‌سازی، نصب آپدیت فعال می‌شود.", "Installation becomes available after the manual scan or cleanup finishes."},
+            {"پایش زنده تا پایان آپدیت متوقف است", "Live monitoring is paused until the update finishes"},
             {"برای این برنامه موردی در فهرست نیست؛ وضعیت بررسی را پایین صفحه ببینید", "No items are listed for this app; see the scan status below"},
             {"برنامه هنوز ثبت‌شده است؛ این بررسی دستی تأیید موفقیت حذف نیست", "The app is still registered; manual review does not confirm a successful uninstall"},
             {"پوشهٔ نصب باقی‌مانده", "Remaining installation folder"},

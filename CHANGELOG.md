@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.7.1
+
+- Keep Download & install available during automatic folder checking. Pause the live watcher and cancel/await the current automatic refresh before downloading, preserving the displayed result and saved scan. Manual scans, cleanup and deletion reviews still finish before installation.
+- Hold the update's busy state through refresh completion so timer ticks, manual Refresh, cleanup and repeated installation cannot start competing work. Show bilingual preparation status, and restore scoped monitoring after cancellation or download failure while respecting Pause live.
+- Add generated-fixture UI checks for updates during blocked cache writes, cancellation before/during download, retry after network failure, preserved cache bytes/timestamp, and resumed monitoring. The saved-scan format, Setup layout and verified update package contract are unchanged.
+
 ## 1.7.0
 
 - Automatically follow app uninstallers launched from Spacio and open an app-specific leftovers page after a successful process exit and three stable checks of registration absence. Early bootstrap exits, cancelled/failed uninstallers and unavailable status are not reported as success; provide a labelled manual inspection fallback and stop-following control without terminating processes.

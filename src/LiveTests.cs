@@ -286,6 +286,7 @@ namespace Spacio
             for (int i = 0; i < 4; i++) { nextLiveAttempt = DateTime.MinValue; await LiveTickAsync(); }
             check(!livePaused && !busy && snapshot == quiet && activeRefreshTask == lastTask && quietCache.SequenceEqual(File.ReadAllBytes(cache.FileFor(newRoot))),
                 "An idle watched folder performs no repeated refresh and retains exact cache bytes");
+            await CheckUpdateDuringLive(inside, check);
             Directory.Move(scope, scope + "-offline"); var offlineBasis = snapshot;
             try
             {

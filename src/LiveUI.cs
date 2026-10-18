@@ -24,7 +24,7 @@ namespace Spacio
         private CancellationTokenSource refreshCancel;
         private async Task ToggleLiveAsync()
         {
-            if (changingLivePause) return;
+            if (changingLivePause || installingUpdate) return;
             changingLivePause = true; livePaused = !livePaused; UpdateLiveToggle();
             try
             {
@@ -42,7 +42,7 @@ namespace Spacio
         private void UpdateLiveToggle()
         {
             U<Button>("LiveToggle").Content = L.T(livePaused ? "ادامهٔ پایش" : "توقف پایش");
-            U<Button>("LiveToggle").IsEnabled = !changingLivePause && liveEnabled && snapshot != null && !snapshot.Cancelled;
+            U<Button>("LiveToggle").IsEnabled = !installingUpdate && !changingLivePause && liveEnabled && snapshot != null && !snapshot.Cancelled;
             U<Button>("LiveToggle").ToolTip = L.T("پایش زنده تغییرات پوشهٔ بازشده را دنبال می‌کند؛ Refresh دستی مستقل است");
         }
         private LiveMonitor CreateLiveMonitor(string path)
@@ -64,7 +64,7 @@ namespace Spacio
         }
         private void AttachLive(bool reconcile)
         {
-            if (cleanupPageOpen || livePaused || !liveEnabled || snapshot == null || current == null || snapshot.Cancelled || closing) return;
+            if (installingUpdate || cleanupPageOpen || livePaused || !liveEnabled || snapshot == null || current == null || snapshot.Cancelled || closing) return;
             if (liveMonitor != null && Paths.Equal(liveMonitor.Root, current.Path) && !liveMonitor.Failed)
             {
                 if (reconcile) liveMonitor.RequireFull();
@@ -108,7 +108,7 @@ namespace Spacio
         }
         private async Task LiveTickAsync()
         {
-            if (closing) return;
+            if (closing || installingUpdate) return;
             if ((DateTime.UtcNow - lastDriveRefresh).TotalSeconds >= 10) RefreshDrives();
             if (cleanupPageOpen || livePaused || busy || refreshing || manualRefreshPending || reviewingCleanup || snapshot == null || snapshot.Cancelled) return;
             if (DateTime.UtcNow < nextLiveAttempt) return;
@@ -121,7 +121,7 @@ namespace Spacio
         }
         private Task RefreshSnapshotAsync(bool full, string requestedPath = null)
         {
-            if (busy || refreshing || snapshot == null || closing) return Task.FromResult(0);
+            if (installingUpdate || busy || refreshing || snapshot == null || closing) return Task.FromResult(0);
             activeRefreshTask = RunRefreshSnapshotAsync(full, requestedPath);
             return activeRefreshTask;
         }

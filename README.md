@@ -4,6 +4,8 @@
 
 برنامهٔ دسکتاپ ویندوز برای بررسی حجم فایل‌ها و پوشه‌ها، با رابط فارسی و انگلیسی.
 
+نسخهٔ **۱.۷.۱** مشکل غیرفعال‌شدن نصب آپدیت هنگام **بررسی خودکار پوشه** را رفع می‌کند. با انتخاب **دانلود و نصب**، بررسی پس‌زمینه متوقف می‌شود و نتیجهٔ ذخیره‌شده باقی می‌ماند. اگر دانلود لغو شود یا خطا بدهد، پایش همان پوشه دوباره ادامه می‌یابد؛ انتخاب قبلی **توقف پایش** حفظ می‌شود. برای دریافت این اصلاح از نسخه‌های قدیمی، ابتدا **توقف پایش** را بزنید و سپس آپدیت کنید، یا برنامه را ببندید و Setup جدید را اجرا کنید.
+
 نسخهٔ **۱.۷.۰** پس از حذف برنامه از داخل Spacio، صفحهٔ **باقی‌مانده‌های برنامه** را خودکار باز می‌کند: مسیر و حجم پوشهٔ نصب، داده‌ها و کش‌های مرتبط نمایش داده می‌شود. موارد دلخواه را انتخاب کنید، **مرور پاک‌سازی** را بزنید، در پیش‌نمایش تیک موارد موردنظر را بزنید و حذف را تأیید کنید. هیچ باقی‌مانده‌ای از قبل برای حذف انتخاب نمی‌شود؛ تنظیمات و اطلاعات حساب هم ممکن است در پوشهٔ داده‌ها باشند.
 
 Spacio اطلاعات برنامه را پیش از اجرای حذف‌کننده نگه می‌دارد و برای بررسی خودکار، خروج موفق فرایند و حذف پایدار ثبت برنامه را بررسی می‌کند. اگر پنجرهٔ اولیه زود بسته شود، حذف لغو شود یا نتیجه روشن نباشد، موفقیت اعلام نمی‌کند. پس از اتمام واقعی، می‌توانید **حذف‌کننده تمام شده؛ بررسی باقی‌مانده‌ها** را بزنید؛ این گزینه فقط بررسی را شروع می‌کند. **بعداً؛ فقط توقف پیگیری** حذف‌کننده را نمی‌بندد. دکمهٔ **باقی‌مانده‌های آخرین حذف** در صفحهٔ برنامه‌ها/Cache، همین بررسی را در همان اجرای Spacio دوباره باز می‌کند.
@@ -16,7 +18,7 @@ Spacio اطلاعات برنامه را پیش از اجرای حذف‌کنند
 
 **پایش زنده:** برچسب **زنده · منتظر تغییرات** یعنی برنامه منتظر اعلان فایل‌سیستم است و اسکن انجام نمی‌دهد. اعلان‌های سریع دسته‌بندی می‌شوند؛ اعلان تکراریِ ریشه به‌تنهایی اسکن کامل راه نمی‌اندازد. پس از بررسی سنگین، بین کارهای خودکار فاصله می‌افتد و خطاهای متوالی با تأخیر بیشتر دوباره بررسی می‌شوند. اعتبارسنجی پنج‌دقیقه‌ای فقط همان پوشهٔ بازشده باقی است. دکمهٔ **توقف پایش / ادامهٔ پایش** پایین صفحه، پایش را برای همین اجرای برنامه متوقف یا فعال می‌کند؛ Refresh دستی و نتیجهٔ ذخیره‌شده باقی می‌مانند. پس از ادامه، فقط پوشهٔ فعلی اعتبارسنجی می‌شود. حرکت دائمی نوار بررسی، در نبود تغییر یا خطا، حالت عادیِ انتظار نیست.
 
-فایل نصب فعلی برای ارسال به کاربران: **Spacio-1.7.0-Setup.exe** در [آخرین انتشار](https://github.com/aliahmadi1382/Spacio-Uninstaller/releases/latest).
+فایل نصب فعلی برای ارسال به کاربران: **Spacio-1.7.1-Setup.exe** در [آخرین انتشار](https://github.com/aliahmadi1382/Spacio-Uninstaller/releases/latest).
 
 از نسخهٔ **۱.۵.۱** فایل نصب **Setup** اضافه شده است. نصب به‌صورت پیش‌فرض آیکون سبز Spacio را روی دسکتاپ و در Start Menu می‌سازد. آپدیت داخل برنامه همچنان فعال است و اسکن‌های قبلی باقی می‌مانند.
 
@@ -104,7 +106,7 @@ Native handles pin ancestors and directories against rename/replacement, verify 
 
 **Live · waiting for changes** means idle monitoring. **Changes queued** means a batch is waiting to run. Writes settle for 800 ms (up to five seconds during continuous bursts), unchanged root notifications do not rescan descendants, and costly background transactions get a 3–30 second cooldown. Repeated failures back off instead of retrying at the same short interval. Five-minute recovery validation remains scoped to the current folder. **Pause live / Resume live** stops monitoring for this app session without losing results; manual Refresh remains available. Resuming validates only the current folder. These controls distinguish normal waiting from an active check and provide a way to stop repeated work.
 
-**Setup, introduced in 1.5.1:** Share the current `Spacio-1.7.0-Setup.exe` from [Releases](https://github.com/aliahmadi1382/Spacio-Uninstaller/releases/latest). The bilingual, per-user installer writes to `%LOCALAPPDATA%\Programs\Spacio`, creates a Start Menu shortcut and an optional desktop shortcut (selected by default), and registers Spacio in Windows Installed apps. Close Spacio before reinstalling or uninstalling; Setup never forces processes closed or downgrades a newer app. The current build is unsigned.
+**Setup, introduced in 1.5.1:** Share the current `Spacio-1.7.1-Setup.exe` from [Releases](https://github.com/aliahmadi1382/Spacio-Uninstaller/releases/latest). The bilingual, per-user installer writes to `%LOCALAPPDATA%\Programs\Spacio`, creates a Start Menu shortcut and an optional desktop shortcut (selected by default), and registers Spacio in Windows Installed apps. Close Spacio before reinstalling or uninstalling; Setup never forces processes closed or downgrades a newer app. The current build is unsigned.
 
 In-app updates keep using the versioned ZIP and preserve the installed shortcuts and uninstaller. On normal startup the installed app refreshes its registered version; portable copies cannot change it. Uninstall removes only known installed files and owned shortcuts. Saved scans, preferences, personal files and updater rollback copies remain. Installation uses only the compiler bundled with .NET Framework, with no external installer toolchain.
 
@@ -126,7 +128,7 @@ Use Setup or download the portable ZIP from [Releases](https://github.com/aliahm
 
 **Recovery checks:** Automatic background validation runs for the visible folder at startup, after notification overflow, and every five minutes to recover missed events (including sleep or removable-media interruptions). The whole drive is checked only when its root is the visible folder. Large folders can take time; the saved view remains usable. An unavailable watched folder retains its saved view without widening recovery to its parent. Changes arriving during a refresh stay queued for the next pass. Cache and updater writes are excluded from notifications to prevent feedback. See Microsoft’s [FileSystemWatcher buffer documentation](https://learn.microsoft.com/en-us/dotnet/api/system.io.filesystemwatcher.internalbuffersize?view=netframework-4.8.1).
 
-**Updates:** Spacio checks the official repository's stable GitHub Releases at startup and every six hours while running. You can also use **Check for updates** in the sidebar. The in-app notification offers **Download & install** and restarts the application after verification. Scans and language settings are retained. Installation waits for scanning/cleanup to finish, needs internet and a writable application folder, and runs without elevation. Download cancellation and network failure leave the installed app usable. Version 1.2 users need one manual download to gain the updater.
+**Updates:** Spacio checks the official repository's stable GitHub Releases at startup and every six hours while running. You can also use **Check for updates** in the sidebar. The in-app notification offers **Download & install** and restarts the application after verification. Scans and language settings are retained. Since 1.7.1, installation can interrupt automatic folder checking: it pauses monitoring, cancels and awaits the refresh, then downloads. Cancellation or network failure resumes reconciliation only for the viewed folder and respects an existing **Pause live** choice. Manual scans and cleanup must finish first. Installation needs internet and a writable application folder and runs without elevation. For an older version whose installation button is disabled during automatic checking, use **Pause live** first or close Spacio and run the new Setup. Version 1.2 users need one manual download to gain the updater.
 
 **Live startup in 1.3.2:** Rotating rings, a floating leaf, moving green light, particles, and a travelling highlight animate throughout startup. A separate WPF UI dispatcher keeps this scene responsive while the main window is constructed. A short 1.5-second introduction shows the ready state if loading finishes sooner, then fades into the workspace. The scan format and location remain unchanged. See Microsoft's [WPF threading model](https://learn.microsoft.com/en-us/dotnet/desktop/wpf/advanced/threading-model) for the independent-window dispatcher pattern.
 
@@ -155,16 +157,18 @@ cd Spacio-Uninstaller
 .\test.ps1
 
 # Build/test a separate version while the previous executable remains open:
-.\build.ps1 -Destination .\dist\v1.7.0
-.\test.ps1 -Executable .\dist\v1.7.0\Spacio.exe
-.\tools\package.ps1 -Executable .\dist\v1.7.0\Spacio.exe
-.\tools\build-setup.ps1 -Executable .\dist\v1.7.0\Spacio.exe
-.\tools\verify-setup.ps1 -Setup .\dist\Spacio-1.7.0-Setup.exe -ReferenceExecutable .\dist\v1.7.0\Spacio.exe
+.\build.ps1 -Destination .\dist\v1.7.1
+.\test.ps1 -Executable .\dist\v1.7.1\Spacio.exe
+.\tools\package.ps1 -Executable .\dist\v1.7.1\Spacio.exe
+.\tools\build-setup.ps1 -Executable .\dist\v1.7.1\Spacio.exe
+.\tools\verify-setup.ps1 -Setup .\dist\Spacio-1.7.1-Setup.exe -ReferenceExecutable .\dist\v1.7.1\Spacio.exe
 ```
 
 `test.ps1` creates isolated fixtures under `.test-data`, including a junction to another generated fixture, paths longer than 260 characters, and 10,000 empty files. Recycling and permanent-cleanup integration checks remove only generated test files/folders. Cleanup checks cover stale previews, known-cache boundaries, protected scan bytes, locked files, running owners, cancellation and command parsing without launching an uninstaller. Bilingual cleanup UI checks use generated cache fixtures under `artifacts` and test acknowledgement and cancellation. Remaining fixtures are available for inspection. Reports and off-screen Persian/English screenshots are saved to `artifacts`.
 
 Live checks cover actual Windows create/delete/rename/resize notifications, startup reconciliation, incremental aggregate correctness, overflow fallback, cancellation, exact cache preservation and UI heartbeat responsiveness while a cache write is blocked.
+
+Update UI checks in `src/UpdateUITests.cs` also hold an isolated cache write while starting an update. They verify cancellation before and during download, exclusive update state, failed-download retry, scoped monitoring recovery, Pause live preservation, and exact saved bytes/timestamps without replacing the running application.
 
 Cache checks cover persistence, startup selection, offline paths, normalization, Unicode, descendant reuse, file changes, invalidation, corruption, cancellation, and atomic replacement. UI checks exercise the Refresh button against generated additions, moves, and deletions, then launch separate processes to verify automatic restoration and the actual loading-screen startup. UI checks use an isolated cache under `artifacts`, not your saved scans. Update checks cover release selection, trusted hosts, tampered packages, rollback, and a separate updater process replacing/restarting a generated application copy. No test installs over the user's app.
 
