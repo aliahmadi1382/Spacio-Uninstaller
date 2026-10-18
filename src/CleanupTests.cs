@@ -137,6 +137,26 @@ namespace Spacio
                 app.Msi = true; app.Command = "MsiExec.exe /I{12345678-1234-1234-1234-123456789ABC}";
                 check(InstalledApps.StartInfo(app).Arguments == "/x {12345678-1234-1234-1234-123456789ABC}", "MSI uninstall uses the registered product GUID and /x without quiet or destructive extras");
                 app.Command = "MsiExec.exe /I malformed"; rejects(() => InstalledApps.StartInfo(app), "MSI commands without a valid product GUID are rejected");
+                string programs = Path.Combine(area, "AppData", "Local", "Programs");
+                string notionIcon = Put(programs, @"Notion\Notion.exe", "unexecuted fixture");
+                string notionUninstaller = Put(programs, @"Notion\Uninstall Notion.exe", "unexecuted fixture");
+                var notion = new InstalledApp { Name = "Notion 7.30.0", Location = "", DisplayIcon = notionIcon + ",0", Command = "\"" + notionUninstaller + "\" /currentuser" };
+                notion.Location = InstalledApps.ResolveLocation(notion, new [] { programs });
+                check(notion.Location == Path.GetDirectoryName(notionIcon) && InstalledApps.Owner(notionIcon, new [] { notion }) == notion, "Missing InstallLocation is recovered from agreeing registered uninstaller and icon paths");
+                check(InstalledApps.Owner(notion.Location + "-other\\notes.txt", new [] { notion }) == null, "Recovered application ownership never matches a similarly named sibling");
+                check(InstalledApps.StartInfo(notion).FileName == notionUninstaller && InstalledApps.StartInfo(notion).Arguments == "/currentuser", "Notion-shaped command keeps the registered uninstaller and per-user argument without executing it");
+                notion.Location = ""; notion.DisplayIcon = "\"" + notionIcon + "\",-1";
+                check(InstalledApps.ResolveLocation(notion, new [] { programs }) == Path.GetDirectoryName(notionIcon), "Quoted registered icon paths and negative resource indices are supported");
+                notion.DisplayIcon = Process.GetCurrentProcess().MainModule.FileName + ",0";
+                check(InstalledApps.ResolveLocation(notion, new [] { programs }) == "", "Disagreeing registered executable directories do not infer app ownership");
+                notion.DisplayIcon = "";
+                check(InstalledApps.ResolveLocation(notion, new [] { programs }) == "", "A folder name or uninstaller path alone cannot infer ownership");
+                notion.DisplayIcon = notionIcon + ",0";
+                check(InstalledApps.ResolveLocation(notion, new [] { Path.GetDirectoryName(notionIcon) }) == "", "A broad installation root is never inferred as one application's directory");
+                notion.Msi = true;
+                check(InstalledApps.ResolveLocation(notion, new [] { programs }) == "", "Shared MSI launchers cannot infer application directories");
+                notion.Msi = false; notion.Command = "\"" + Path.Combine(programs, "missing.exe") + "\"";
+                check(InstalledApps.ResolveLocation(notion, new [] { programs }) == "", "Missing uninstallers do not produce a false association");
                 check(InstalledApps.Family("My file named Chrome.txt") == "" && InstalledApps.Family("Adobe Acrobat") == "" && InstalledApps.Family("Adobe Premiere Pro 2026") == "adobe-media", "Unrelated filenames and Acrobat are not assigned Adobe media/Chrome caches");
                 check(File.ReadAllText(canary) == "keep outside" && File.ReadAllText(protectedScan) == "unchanged scan bytes", "All deletion tests preserve outside canaries and saved scans");
                 lines.Add("FIXTURE=" + area); File.WriteAllLines(report, lines); return 0;
@@ -211,6 +231,23 @@ namespace Spacio
                 var nameCell = appGrid.Columns[0].GetCellContent(appGrid.Items[0]) as TextBlock;
                 if (nameCell == null || nameCell.Text != installedApps[0].Name || appGrid.Columns.Any(c => c.ActualWidth < 30)) throw new Exception("Installed app columns did not render their content.");
                 SavePreview(prefix + "-apps-page-" + (persian ? "fa" : "en") + ".png");
+                Exception reviewFailure = null;
+                var registered = installedApps[0];
+                var appChoice = ShowCleanupReview(new List<CleanupItem>(), registered, async dialog => {
+                    try
+                    {
+                        dialog.ShowInTaskbar = false; await Task.Delay(100); dialog.UpdateLayout();
+                        var uninstall = ReviewControl<Button>(dialog, "ReviewUninstall");
+                        if (uninstall == null || !uninstall.IsVisible || !uninstall.IsEnabled || Convert.ToString(uninstall.ToolTip) != registered.Command) throw new Exception("Registered app has no usable uninstall action.");
+                        if (ReviewControl<Button>(dialog, "ReviewApply").IsVisible || ReviewControl<CheckBox>(dialog, "ReviewAcknowledge").IsVisible) throw new Exception("App removal still presents a disabled file-delete action.");
+                        var bitmap = new System.Windows.Media.Imaging.RenderTargetBitmap((int)dialog.ActualWidth, (int)dialog.ActualHeight, 96, 96, PixelFormats.Pbgra32); bitmap.Render(dialog);
+                        Startup.SaveBitmap(bitmap, prefix + "-app-review-" + (persian ? "fa" : "en") + ".png");
+                        uninstall.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                    }
+                    catch (Exception e) { reviewFailure = e; dialog.Close(); }
+                });
+                if (reviewFailure != null) throw reviewFailure;
+                if (!appChoice.Confirmed || !appChoice.Uninstall || appChoice.Permanent) throw new Exception("Application confirmation must authorize only its uninstaller, never direct file deletion.");
             }
             U<Button>("CleanupBack").RaiseEvent(new RoutedEventArgs(Button.ClickEvent)); await RefreshRowsAsync();
             if (cleanupPageOpen || !U<Grid>("Workspace").IsVisible || snapshot != original) throw new Exception("Back from cleanup did not retain the scanned file tree.");

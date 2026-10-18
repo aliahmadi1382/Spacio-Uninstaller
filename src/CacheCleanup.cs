@@ -143,7 +143,7 @@ namespace Spacio
 
     internal sealed class InstalledApp
     {
-        internal string Id, Command, Family;
+        internal string Id, Command, Family, DisplayIcon;
         internal bool Msi;
         public string Name { get; internal set; }
         public string Publisher { get; internal set; }
@@ -185,8 +185,10 @@ namespace Spacio
                                     if (key == null || Convert.ToString(key.GetValue("SystemComponent")) == "1" || key.GetValue("ParentKeyName") != null) continue;
                                     string label = Convert.ToString(key.GetValue("DisplayName")), command = Convert.ToString(key.GetValue("UninstallString"));
                                     if (String.IsNullOrWhiteSpace(label) || String.IsNullOrWhiteSpace(command)) continue;
-                                    result.Add(new InstalledApp { Id = hive + "/" + view + "/" + name, Name = label, Version = Convert.ToString(key.GetValue("DisplayVersion")), Publisher = Convert.ToString(key.GetValue("Publisher")),
-                                        Location = Convert.ToString(key.GetValue("InstallLocation")).Trim('"', ' '), Command = command, Msi = Convert.ToString(key.GetValue("WindowsInstaller")) == "1", Family = Family(label) });
+                                    var app = new InstalledApp { Id = hive + "/" + view + "/" + name, Name = label, Version = Convert.ToString(key.GetValue("DisplayVersion")), Publisher = Convert.ToString(key.GetValue("Publisher")),
+                                        Location = Convert.ToString(key.GetValue("InstallLocation")).Trim('"', ' '), DisplayIcon = Convert.ToString(key.GetValue("DisplayIcon")),
+                                        Command = command, Msi = Convert.ToString(key.GetValue("WindowsInstaller")) == "1", Family = Family(label) };
+                                    app.Location = ResolveLocation(app); result.Add(app);
                                 }
                             }
                         }
@@ -200,6 +202,32 @@ namespace Spacio
                 try { return !String.IsNullOrWhiteSpace(a.Location) && System.IO.Path.IsPathRooted(a.Location) && Paths.Normalize(a.Location).Length > 3 && Paths.Within(path, a.Location); }
                 catch (ArgumentException) { return false; } catch (NotSupportedException) { return false; }
             }).OrderByDescending(a => a.Location.Length).FirstOrDefault();
+        }
+        internal static string ResolveLocation(InstalledApp app, string[] programRoots = null)
+        {
+            if (!String.IsNullOrWhiteSpace(app.Location)) return Environment.ExpandEnvironmentVariables(app.Location);
+            if (app.Msi || String.IsNullOrWhiteSpace(app.DisplayIcon)) return "";
+            try
+            {
+                // Some per-user installers (including Notion) omit InstallLocation.
+                // Require two agreeing registered executable paths inside a dedicated
+                // program directory. Never infer ownership from the folder name.
+                string executable = StartInfo(app).FileName;
+                string icon = Environment.ExpandEnvironmentVariables(app.DisplayIcon).Trim();
+                int comma = icon.LastIndexOf(','); int index;
+                if (comma >= 0 && Int32.TryParse(icon.Substring(comma + 1).Trim(), out index)) icon = icon.Substring(0, comma).Trim();
+                icon = icon.Trim('"');
+                if (!Path.IsPathRooted(icon) || !icon.EndsWith(".exe", StringComparison.OrdinalIgnoreCase) || !File.Exists(icon)) return "";
+                string directory = Paths.Normalize(Path.GetDirectoryName(executable));
+                if (!Paths.Equal(directory, Path.GetDirectoryName(icon))) return "";
+                var roots = programRoots ?? new [] { Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles), Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86),
+                    Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Programs") };
+                if (!roots.Any(root => !String.IsNullOrWhiteSpace(root) && !Paths.Equal(directory, root) && Paths.Within(directory, root))) return "";
+                Paths.RequireLocal(icon); Paths.CheckAncestors(icon); Paths.CheckAncestors(executable);
+                return directory;
+            }
+            catch (IOException) { return ""; } catch (UnauthorizedAccessException) { return ""; }
+            catch (ArgumentException) { return ""; } catch (NotSupportedException) { return ""; } catch (System.Security.SecurityException) { return ""; }
         }
         internal static ProcessStartInfo StartInfo(InstalledApp app)
         {

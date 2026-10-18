@@ -49,7 +49,11 @@ namespace Spacio
             {
                 string path = Paths.Normalize(change);
                 if (!Paths.Within(path, before.Root.Path)) continue;
-                if (Paths.Equal(path, before.Root.Path)) return Refresh(before, null, token, progress);
+                // A root Changed notification is metadata, not an overflow signal.
+                // Full validation is requested explicitly; noisy root events must not
+                // repeatedly enumerate an otherwise unchanged drive.
+                if (recursivePaths && Paths.Equal(path, before.Root.Path)) return Refresh(before, null, token, progress);
+                if (Paths.Equal(path, before.Root.Path)) { targets.Add(path); continue; }
                 // If a whole new tree arrived, read its first unknown ancestor once.
                 string parent = Path.GetDirectoryName(path);
                 while (parent != null && !index.ContainsKey(parent)) { path = parent; parent = Path.GetDirectoryName(path); }
@@ -75,7 +79,7 @@ namespace Spacio
                 try
                 {
                     var attributes = File.GetAttributes(path);
-                    Paths.CheckAncestors(Path.GetDirectoryName(path));
+                    Paths.CheckAncestors(Path.GetDirectoryName(path) ?? path);
                     bool folder = (attributes & FileAttributes.Directory) != 0;
                     next = Scanner.ReadEntry(folder ? (FileSystemInfo)new DirectoryInfo(path) : new FileInfo(path), null);
                     if ((attributes & (FileAttributes.ReparsePoint | FileAttributes.Offline)) != 0 || Reserved(next))
@@ -233,6 +237,7 @@ namespace Spacio
         private readonly string[] excluded;
         private FileSystemWatcher watcher;
         private bool full, failed, disposed;
+        private DateTime firstPending, lastPending;
         public readonly string Root;
         public LiveMonitor(string root, params string[] excludedPaths)
         {
@@ -252,11 +257,13 @@ namespace Spacio
             lock (gate)
             {
                 if (disposed || full) return;
+                var now = DateTime.UtcNow; if (pending.Count == 0) firstPending = now; lastPending = now;
                 if (pending.Count >= 4096) { full = true; pending.Clear(); } else pending.Add(path);
             }
         }
         public bool Failed { get { lock (gate) return failed; } }
         public bool HasPending { get { lock (gate) return full || pending.Count > 0; } }
+        public bool Ready { get { lock (gate) return full || (pending.Count > 0 && ((DateTime.UtcNow - lastPending).TotalMilliseconds >= 800 || (DateTime.UtcNow - firstPending).TotalSeconds >= 5)); } }
         public void RequireFull() { lock (gate) { full = true; pending.Clear(); } }
         public string[] Take()
         {

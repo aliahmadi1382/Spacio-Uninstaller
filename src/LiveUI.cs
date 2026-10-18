@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading;
@@ -13,12 +14,37 @@ namespace Spacio
     public sealed partial class Controller
     {
         private bool liveEnabled, refreshing, driveRefreshRunning, refreshingAutomatically, manualRefreshPending;
+        private bool livePaused, changingLivePause;
+        private int automaticFailures;
         private Task activeRefreshTask;
         private LiveMonitor liveMonitor;
         private DispatcherTimer liveTimer;
         private DateTime nextLiveAttempt, lastDriveRefresh, lastFullCheck;
         private string liveState;
         private CancellationTokenSource refreshCancel;
+        private async Task ToggleLiveAsync()
+        {
+            if (changingLivePause) return;
+            changingLivePause = true; livePaused = !livePaused; UpdateLiveToggle();
+            try
+            {
+                if (livePaused)
+                {
+                    if (liveMonitor != null) { liveMonitor.Dispose(); liveMonitor = null; }
+                    if (refreshingAutomatically && activeRefreshTask != null) { refreshCancel.Cancel(); await activeRefreshTask; }
+                    SetLiveState("پایش زنده متوقف است؛ Refresh دستی فعال است");
+                    SetStatus(L.T("پایش زنده متوقف است؛ Refresh دستی فعال است"));
+                }
+                else { automaticFailures = 0; AttachLive(true); }
+            }
+            finally { changingLivePause = false; UpdateLiveToggle(); }
+        }
+        private void UpdateLiveToggle()
+        {
+            U<Button>("LiveToggle").Content = L.T(livePaused ? "ادامهٔ پایش" : "توقف پایش");
+            U<Button>("LiveToggle").IsEnabled = !changingLivePause && liveEnabled && snapshot != null && !snapshot.Cancelled;
+            U<Button>("LiveToggle").ToolTip = L.T("پایش زنده تغییرات پوشهٔ بازشده را دنبال می‌کند؛ Refresh دستی مستقل است");
+        }
         private LiveMonitor CreateLiveMonitor(string path)
         {
             Paths.RequireLocal(Paths.Normalize(path)); Paths.CheckAncestors(path);
@@ -38,18 +64,18 @@ namespace Spacio
         }
         private void AttachLive(bool reconcile)
         {
-            if (cleanupPageOpen || !liveEnabled || snapshot == null || current == null || snapshot.Cancelled || closing) return;
+            if (cleanupPageOpen || livePaused || !liveEnabled || snapshot == null || current == null || snapshot.Cancelled || closing) return;
             if (liveMonitor != null && Paths.Equal(liveMonitor.Root, current.Path) && !liveMonitor.Failed)
             {
                 if (reconcile) liveMonitor.RequireFull();
-                SetLiveState(liveMonitor.HasPending ? "بررسی تغییرات در پس‌زمینه…" : "زنده · تغییرات خودکار دنبال می‌شوند");
+                SetLiveState(liveMonitor.HasPending ? "تغییرات در صف بررسی" : "زنده · منتظر تغییرات");
                 return;
             }
             // A saved drive tree is a cache, not the scope of every background operation.
             // Leaving a folder also cancels the old automatic traversal before following the new one.
             if (refreshingAutomatically && refreshCancel != null) refreshCancel.Cancel();
             if (liveMonitor != null) { liveMonitor.Dispose(); liveMonitor = null; }
-            nextLiveAttempt = DateTime.MinValue; lastFullCheck = DateTime.MinValue;
+            nextLiveAttempt = DateTime.MinValue; lastFullCheck = DateTime.MinValue; automaticFailures = 0;
             try
             {
                 liveMonitor = CreateLiveMonitor(current.Path);
@@ -72,10 +98,11 @@ namespace Spacio
         }
         private void SetLiveState(string state)
         {
-            liveState = state;
+            liveState = livePaused ? "پایش زنده متوقف است؛ Refresh دستی فعال است" : state;
+            UpdateLiveToggle();
             if (liveEnabled)
             {
-                U<TextBlock>("LiveStatus").Text = "● " + L.T(state);
+                U<TextBlock>("LiveStatus").Text = "● " + L.T(liveState);
                 U<TextBlock>("LiveStatus").ToolTip = L.T("مسیر پایش زنده") + ": " + (current == null ? "" : current.Path);
             }
         }
@@ -83,14 +110,14 @@ namespace Spacio
         {
             if (closing) return;
             if ((DateTime.UtcNow - lastDriveRefresh).TotalSeconds >= 10) RefreshDrives();
-            if (cleanupPageOpen || busy || refreshing || manualRefreshPending || reviewingCleanup || snapshot == null || snapshot.Cancelled) return;
+            if (cleanupPageOpen || livePaused || busy || refreshing || manualRefreshPending || reviewingCleanup || snapshot == null || snapshot.Cancelled) return;
             if (DateTime.UtcNow < nextLiveAttempt) return;
             AttachLive(false);
             if (liveMonitor == null) return;
             // Periodic validation also covers notifications Windows could not deliver (sleep,
             // removable media, and changes to the watched root itself).
             if ((DateTime.UtcNow - lastFullCheck).TotalMinutes >= 5) liveMonitor.RequireFull();
-            if (liveMonitor.HasPending) await RefreshSnapshotAsync(false);
+            if (liveMonitor.Ready) await RefreshSnapshotAsync(false);
         }
         private Task RefreshSnapshotAsync(bool full, string requestedPath = null)
         {
@@ -104,6 +131,7 @@ namespace Spacio
             string viewAtStart = current == null ? basis.Root.Path : current.Path;
             var monitor = liveMonitor;
             bool automatic = !full && requestedPath == null;
+            var duration = Stopwatch.StartNew();
             string scope = requestedPath ?? (automatic ? (monitor == null ? viewAtStart : monitor.Root) : basis.Root.Path);
             bool scoped = !Paths.Equal(scope, basis.Root.Path);
             string[] changes = full || monitor == null ? null : monitor.Take();
@@ -156,9 +184,12 @@ namespace Spacio
                 await SaveLastPathAsync(current.Path);
                 if (!superseded())
                 {
-                    SetLiveState("زنده · تغییرات خودکار دنبال می‌شوند");
+                    automaticFailures = 0;
+                    SetLiveState(monitor != null && monitor.HasPending ? "تغییرات در صف بررسی" : "زنده · منتظر تغییرات");
                     SetStatus(L.T("تغییرات بررسی و ذخیره شد") + "  " + scope);
-                    nextLiveAttempt = DateTime.UtcNow.AddSeconds(3);
+                    // Give the UI and disk a rest after expensive transactions. Event
+                    // batches remain queued; ordinary bursts still settle within seconds.
+                    nextLiveAttempt = DateTime.UtcNow.AddSeconds(automatic ? Math.Max(3, Math.Min(30, duration.Elapsed.TotalSeconds)) : 3);
                 }
                 RefreshDrives();
             }
@@ -181,7 +212,8 @@ namespace Spacio
                 if (!superseded())
                 {
                     if (monitor != null && monitor == liveMonitor && Paths.Equal(scope, monitor.Root)) monitor.RequireFull();
-                    nextLiveAttempt = DateTime.UtcNow.AddSeconds(15);
+                    automaticFailures = Math.Min(automaticFailures + 1, 5);
+                    nextLiveAttempt = DateTime.UtcNow.AddSeconds(Math.Min(300, 15 * Math.Pow(2, automaticFailures - 1)));
                 }
             }
             finally

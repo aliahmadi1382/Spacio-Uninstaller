@@ -72,6 +72,7 @@ namespace Spacio
             U<Button>("ScanButton").Click += async delegate { await ScanAsync(U<TextBox>("PathBox").Text); };
             U<Button>("RescanButton").Click += async delegate { await ScanAsync(U<TextBox>("PathBox").Text, true); };
             U<Button>("StopButton").Click += delegate { if (scanCancel != null) scanCancel.Cancel(); if (refreshCancel != null) refreshCancel.Cancel(); if (cleanupCancel != null) cleanupCancel.Cancel(); };
+            U<Button>("LiveToggle").Click += async delegate { await ToggleLiveAsync(); };
             U<TextBox>("PathBox").KeyDown += async (s, e) => { if (e.Key == Key.Enter && !busy) await ScanAsync(U<TextBox>("PathBox").Text); };
             U<TextBox>("SearchBox").TextChanged += delegate { U<TextBlock>("SearchPlaceholder").Visibility = U<TextBox>("SearchBox").Text.Length == 0 ? Visibility.Visible : Visibility.Collapsed; searchTimer.Stop(); searchTimer.Start(); };
             foreach (var name in new [] { "SizeFilter", "AgeFilter", "SortFilter" }) U<ComboBox>(name).SelectionChanged += delegate { if (!changingLanguage) RefreshRows(); };
@@ -134,7 +135,7 @@ namespace Spacio
             if (snapshot == null) SetStatus(L.T("آمادهٔ اسکن"));
             else SetStatus(L.T(stale ? "داده‌ها تغییر کرده‌اند؛ دوباره اسکن کنید" : snapshot.Cancelled ? "اسکن متوقف شد؛ نتیجه ناقص است" : viewingCached ? "نتیجهٔ قبلی بدون اسکن دوباره باز شد" : cacheSaved ? "اسکن کامل و ذخیره شد" : "اسکن کامل شد"));
             UpdateLabels();
-            if (liveEnabled) SetLiveState(liveState ?? "زنده · تغییرات خودکار دنبال می‌شوند");
+            if (liveEnabled) SetLiveState(liveState ?? "زنده · منتظر تغییرات");
         }
         private void Localize(DependencyObject node)
         {
@@ -285,7 +286,7 @@ namespace Spacio
                     return;
                 }
                 SetStatus(L.T("در حال اسکن…")); U<TextBlock>("EmptyTitle").Text = L.T("در حال اسکن…");
-                if (liveEnabled)
+                if (liveEnabled && !livePaused)
                 {
                     try
                     {

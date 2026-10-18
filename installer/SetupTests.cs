@@ -12,6 +12,12 @@ namespace SpacioSetup
 {
     internal static class SetupTests
     {
+        private static bool AppRunning()
+        {
+            var processes = Process.GetProcessesByName("Spacio");
+            try { return processes.Length > 0; }
+            finally { foreach (var process in processes) process.Dispose(); }
+        }
         private static Dictionary<string, string> UserDataHashes()
         {
             string data = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Spacio");
@@ -30,7 +36,9 @@ namespace SpacioSetup
             var context = new InstallContext { Directory = Path.Combine(area, "نصب آزمایشی", "Spacio"), DesktopLink = Path.Combine(area, "Desktop", "Spacio.lnk"), MenuLink = Path.Combine(area, "Start Menu", "Spacio.lnk"), RegistryPath = @"Software\SpacioSetupTests\" + Guid.NewGuid().ToString("N") };
             try
             {
-                var userData = UserDataHashes();
+                // Live copies legitimately rewrite their real cache. Do not lock, stop,
+                // or assert immutability of that concurrent user's data during this test.
+                var userData = AppRunning() ? null : UserDataHashes();
                 string personal = Path.Combine(area, "personal.txt"); File.WriteAllText(personal, "keep this user file");
                 var defaults = InstallContext.CurrentUser();
                 check(defaults.Directory == Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Programs", "Spacio"), "Default install is per-user and independent of scan/preference storage");
@@ -78,6 +86,11 @@ namespace SpacioSetup
                     { check(process.WaitForExit(60000) && process.ExitCode == 0, "Installed-app update, restart and saved-scan preservation: " + (File.Exists(upgradeReport) ? File.ReadAllText(upgradeReport) : "missing report")); }
                     check(SetupEngine.Hash(Path.Combine(context.Directory, "Spacio.Setup.exe")) == installerHash && SetupEngine.Same(SetupEngine.ShortcutTarget(context.DesktopLink), context.Executable), "In-app update keeps the uninstaller and desktop shortcut working");
                 }
+                string preferences = Path.Combine(area, "language.txt"); File.WriteAllText(preferences, "fa");
+                var savedPaths = new List<string> { preferences };
+                string savedScans = Path.Combine(area, "saved-scans");
+                if (Directory.Exists(savedScans)) savedPaths.AddRange(Directory.GetFiles(savedScans));
+                var savedData = savedPaths.ToDictionary(p => p, SetupEngine.Hash);
                 string keep = Path.Combine(context.Directory, "my-notes.txt"); File.WriteAllText(keep, "unowned files stay");
                 string rollback = Path.Combine(context.Directory, ".spacio-fixture.previous.exe"); File.WriteAllText(rollback, "user rollback copy");
                 reject(() => SetupEngine.Uninstall(context, phase => { if (phase == "registration") throw new IOException("Injected uninstall failure"); }), "A partial uninstall reports failure");
@@ -94,7 +107,10 @@ namespace SpacioSetup
                 reject(() => SetupEngine.Install(context, true), "An unrelated existing desktop shortcut is not overwritten");
                 SetupEngine.Uninstall(context);
                 check(File.Exists(context.DesktopLink) && SetupEngine.Same(SetupEngine.ShortcutTarget(context.DesktopLink), personal), "Uninstall preserves a shortcut repointed to an unrelated file");
-                check(userData.All(p => File.Exists(p.Key) && SetupEngine.Hash(p.Key) == p.Value), "Existing real saved scans and language preferences remain byte-for-byte unchanged");
+                check(savedData.All(p => File.Exists(p.Key) && SetupEngine.Hash(p.Key) == p.Value), "Isolated saved scans and preferences survive uninstall, reinstall and failure recovery byte-for-byte");
+                if (userData != null && !AppRunning())
+                    check(userData.All(p => File.Exists(p.Key) && SetupEngine.Hash(p.Key) == p.Value), "Existing real saved scans and language preferences remain byte-for-byte unchanged");
+                else log.Add("NOTE: A live Spacio copy owns the real data; real-data immutability was not asserted. Preservation checks used isolated saved scans and preferences.");
                 log.Add("FIXTURE=" + area); File.WriteAllLines(report, log); return 0;
             }
             catch (Exception e) { log.Add(e.ToString()); log.Add("FIXTURE=" + area); File.WriteAllLines(report, log); return 1; }

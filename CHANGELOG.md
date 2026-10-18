@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.5.2
+
+- Recognize applications such as Notion whose uninstall registration omits InstallLocation, using agreeing registered uninstaller and executable-icon paths under a dedicated standard program directory. Preserve exact path boundaries and reject missing/mismatched/shared/linked fallback evidence.
+- Route application reviews to a prominent registered-uninstaller action and Windows Settings. Hide file-deletion controls for app removal; retain separate review of remaining caches and all AppData protections.
+- Treat root Changed notifications as metadata instead of unconditional whole-tree scans. Debounce rapid event batches and add a cooldown after costly automatic work, with increasing delays after repeated refresh errors.
+- Add bilingual Pause live / Resume live controls and distinct waiting/queued states. Pausing cancels automatic work and releases its watcher without clearing results; manual Refresh remains scoped and usable. Resume validates the current folder. Keep five-minute scoped recovery checks.
+- Verify Notion-shaped registration and the local Notion registration without launching an uninstaller. Add application-action UI checks, duplicate/root-event checks, idle cache preservation and pause/manual-refresh/resume integration tests. Stabilize generated rename/arrival fixture timestamps.
+- Make Setup self-tests coexist with a running user copy: verify isolated saved scans/preferences across upgrade, uninstall and reinstall, and explicitly omit real-data immutability assertions while live Spacio owns those files.
+
 ## 1.5.1
 
 - Add a bilingual Windows Setup executable with the green Spacio icon, default desktop shortcut, Start Menu entry and Windows Installed apps registration. Install per user without administrator access.

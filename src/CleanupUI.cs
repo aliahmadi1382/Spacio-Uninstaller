@@ -315,7 +315,7 @@ namespace Spacio
             var checkTemplate = new DataTemplate(); var check = new FrameworkElementFactory(typeof(CheckBox));
             check.SetBinding(CheckBox.IsCheckedProperty, new Binding("Chosen") { Mode = BindingMode.TwoWay, UpdateSourceTrigger = UpdateSourceTrigger.PropertyChanged });
             check.SetBinding(CheckBox.IsEnabledProperty, new Binding("CanChoose")); check.SetValue(CheckBox.HorizontalAlignmentProperty, HorizontalAlignment.Center); checkTemplate.VisualTree = check;
-            grid.Columns.Add(new DataGridTemplateColumn { Header = L.T("انتخاب"), Width = 60, CellTemplate = checkTemplate });
+            if (app == null) grid.Columns.Add(new DataGridTemplateColumn { Header = L.T("انتخاب"), Width = 60, CellTemplate = checkTemplate });
             grid.Columns.Add(CleanupColumn("برنامه و مسیر کش", "Path", new DataGridLength(1, DataGridLengthUnitType.Star)));
             grid.Columns.Add(CleanupColumn("اندازه", "Size", 95)); grid.Columns.Add(CleanupColumn("نوع", "Kind", 125)); grid.Columns.Add(CleanupColumn("وضعیت", "Status", 185));
             grid.ItemsSource = items;
@@ -338,21 +338,26 @@ namespace Spacio
             footer.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto }); footer.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto }); footer.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
             var permanent = new CheckBox { Content = L.T("حذف دائمی به‌جای سطل بازیافت"), IsChecked = true, Margin = new Thickness(0, 10, 0, 6), Foreground = B("#EDB2A4") }; footer.Children.Add(permanent);
             permanent.Name = "ReviewPermanent";
+            permanent.Visibility = app == null ? Visibility.Visible : Visibility.Collapsed;
             var acknowledge = new CheckBox { Content = L.T("می‌دانم موارد حذف دائمی از سطل بازیافت قابل بازگردانی نیستند"), Foreground = B("#EDB2A4"), Visibility = Visibility.Collapsed }; Grid.SetRow(acknowledge, 1); footer.Children.Add(acknowledge);
             acknowledge.Name = "ReviewAcknowledge";
-            var summary = new TextBlock { HorizontalAlignment = HorizontalAlignment.Right, Margin = new Thickness(8, 10, 0, 0), Foreground = B("#9EBBB0") }; footer.Children.Add(summary);
+            var summary = new TextBlock { HorizontalAlignment = HorizontalAlignment.Right, Margin = new Thickness(8, 10, 0, 0), Foreground = B("#9EBBB0"), Visibility = app == null ? Visibility.Visible : Visibility.Collapsed }; footer.Children.Add(summary);
             var buttons = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right, Margin = new Thickness(0, 12, 0, 0) }; Grid.SetRow(buttons, 2); footer.Children.Add(buttons);
             var cancel = ReviewButton("لغو"); cancel.Click += delegate { dialog.DialogResult = false; }; buttons.Children.Add(cancel);
             cancel.Name = "ReviewCancel";
             if (app != null)
             {
+                var settings = ReviewButton("تنظیمات برنامه‌های ویندوز"); buttons.Children.Add(settings);
+                settings.Click += delegate { OpenShell("ms-settings:appsfeatures", null); };
                 var uninstall = ReviewButton("اجرای حذف‌کنندهٔ برنامه"); buttons.Children.Add(uninstall);
+                uninstall.Name = "ReviewUninstall"; uninstall.Background = B("#285D4C"); uninstall.Foreground = B("#E4FFF2");
                 uninstall.ToolTip = app.Command;
                 uninstall.Click += delegate { choice.Confirmed = true; choice.Uninstall = true; dialog.DialogResult = true; };
             }
             var apply = ReviewButton("تأیید انتقال به سطل بازیافت"); apply.Background = B("#694139"); buttons.Children.Add(apply);
             apply.Name = "ReviewApply";
-            Action update = () => { var chosen = CleanupEngine.Collapse(items.Where(i => i.Chosen && i.CanChoose)); summary.Text = chosen.Count + " " + L.T("مورد") + " · " + Formats.Size(chosen.Sum(i => i.Entry.Bytes)); acknowledge.Visibility = permanent.IsChecked == true ? Visibility.Visible : Visibility.Collapsed; apply.Content = L.T(permanent.IsChecked == true ? "تأیید حذف دائمی" : "تأیید انتقال به سطل بازیافت"); apply.IsEnabled = chosen.Count > 0 && (permanent.IsChecked != true || acknowledge.IsChecked == true); };
+            apply.Visibility = app == null ? Visibility.Visible : Visibility.Collapsed;
+            Action update = () => { var chosen = CleanupEngine.Collapse(items.Where(i => i.Chosen && i.CanChoose)); summary.Text = chosen.Count + " " + L.T("مورد") + " · " + Formats.Size(chosen.Sum(i => i.Entry.Bytes)); acknowledge.Visibility = app == null && permanent.IsChecked == true ? Visibility.Visible : Visibility.Collapsed; apply.Content = L.T(permanent.IsChecked == true ? "تأیید حذف دائمی" : "تأیید انتقال به سطل بازیافت"); apply.IsEnabled = app == null && chosen.Count > 0 && (permanent.IsChecked != true || acknowledge.IsChecked == true); };
             permanent.Click += delegate { acknowledge.IsChecked = false; update(); }; acknowledge.Click += delegate { update(); };
             grid.AddHandler(CheckBox.CheckedEvent, new RoutedEventHandler((s, e) => dialog.Dispatcher.BeginInvoke(update)));
             grid.AddHandler(CheckBox.UncheckedEvent, new RoutedEventHandler((s, e) => dialog.Dispatcher.BeginInvoke(update)));

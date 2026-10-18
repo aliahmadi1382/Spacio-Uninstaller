@@ -16,6 +16,17 @@ internal static class UpgradeProbe
         while (!File.Exists(path) && watch.ElapsedMilliseconds < timeoutMilliseconds) Thread.Sleep(50);
         return File.Exists(path);
     }
+    private static void WaitForFixtureExit(string target)
+    {
+        // The startup marker precedes WPF shutdown. Let the isolated app release
+        // its executable before a following Setup test tries to uninstall it.
+        var watch = Stopwatch.StartNew();
+        while (true)
+        {
+            try { using (File.Open(target, FileMode.Open, FileAccess.ReadWrite, FileShare.None)) { } return; }
+            catch (IOException) { if (watch.ElapsedMilliseconds >= 15000) throw; Thread.Sleep(100); }
+        }
+    }
     public static int Main(string[] args)
     {
         string target = args[0], report = args[1];
@@ -53,6 +64,7 @@ internal static class UpgradeProbe
                         Require(helper.WaitForExit(20000) && helper.ExitCode == 0, "Installation did not finish successfully.");
                         // This now starts the full WPF UI and restores a scan, rather than the tiny version probe.
                         Require(WaitForFile(marker + ".startup.ok.txt", 30000) && System.Reflection.AssemblyName.GetAssemblyName(target).Version == release.Version, "Upgraded application did not restore the old saved scan after restarting.");
+                        WaitForFixtureExit(target);
                         Require(Updates.Hash(cache.FileFor(data)) == scanHash && Updates.Hash(originalFile) == originalHash, "Update changed the saved scan or the scanned file.");
                         Require(new SnapshotCache(cachePath).Find(data, CancellationToken.None).Snapshot.StartedUtc == snapshot.StartedUtc, "Original scan timestamp was not preserved.");
                     }

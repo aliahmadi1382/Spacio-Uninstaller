@@ -9,6 +9,12 @@ namespace Spacio
     {
         public static bool Persian = true;
         private static readonly Dictionary<string, string> English = new Dictionary<string, string> {
+            {"زنده · منتظر تغییرات", "Live · waiting for changes"},
+            {"تغییرات در صف بررسی", "Changes queued"},
+            {"توقف پایش", "Pause live"},
+            {"ادامهٔ پایش", "Resume live"},
+            {"پایش زنده متوقف است؛ Refresh دستی فعال است", "Live paused · manual Refresh available"},
+            {"پایش زنده تغییرات پوشهٔ بازشده را دنبال می‌کند؛ Refresh دستی مستقل است", "Live monitoring follows the open folder; manual Refresh works independently"},
             {"موارد انتخاب‌شده پیش از تأیید حذف دوباره بررسی می‌شوند", "Selected items will be checked again before you confirm deletion"},
             {"آمادهٔ بررسی", "Ready to review"},
             {"ابتدا برنامه را ببندید", "Close the app first"},

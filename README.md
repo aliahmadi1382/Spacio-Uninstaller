@@ -4,7 +4,13 @@
 
 برنامهٔ دسکتاپ ویندوز برای بررسی حجم فایل‌ها و پوشه‌ها، با رابط فارسی و انگلیسی.
 
-نسخهٔ **۱.۵.۱** فایل نصب **Setup** دارد. برای کاربران ویندوزی، `Spacio-1.5.1-Setup.exe` را از [آخرین انتشار](https://github.com/aliahmadi1382/Spacio-Uninstaller/releases/latest) بفرستید. نصب به‌صورت پیش‌فرض آیکون سبز Spacio را روی دسکتاپ و در Start Menu می‌سازد. آپدیت داخل برنامه همچنان فعال است و اسکن‌های قبلی باقی می‌مانند.
+نسخهٔ **۱.۵.۲** تشخیص برنامه‌هایی مانند **Notion** را که مسیر نصب را در رجیستری خالی می‌گذارند اصلاح می‌کند: فقط وقتی مسیر حذف‌کننده و آیکونِ ثبت‌شده به یک پوشهٔ معتبر برنامه اشاره کنند، آن پوشه به برنامه مربوط می‌شود. برای حذف Notion، ردیفش را انتخاب کنید، مرور را باز کنید و **اجرای حذف‌کنندهٔ برنامه** را بزنید. پوشهٔ برنامه مستقیماً حذف نمی‌شود؛ کش‌های باقی‌مانده بررسی و تأیید جداگانه دارند.
+
+**پایش زنده:** برچسب **زنده · منتظر تغییرات** یعنی برنامه منتظر اعلان فایل‌سیستم است و اسکن انجام نمی‌دهد. اعلان‌های سریع دسته‌بندی می‌شوند؛ اعلان تکراریِ ریشه به‌تنهایی اسکن کامل راه نمی‌اندازد. پس از بررسی سنگین، بین کارهای خودکار فاصله می‌افتد و خطاهای متوالی با تأخیر بیشتر دوباره بررسی می‌شوند. اعتبارسنجی پنج‌دقیقه‌ای فقط همان پوشهٔ بازشده باقی است. دکمهٔ **توقف پایش / ادامهٔ پایش** پایین صفحه، پایش را برای همین اجرای برنامه متوقف یا فعال می‌کند؛ Refresh دستی و نتیجهٔ ذخیره‌شده باقی می‌مانند. پس از ادامه، فقط پوشهٔ فعلی اعتبارسنجی می‌شود. حرکت دائمی نوار بررسی، در نبود تغییر یا خطا، حالت عادیِ انتظار نیست.
+
+فایل نصب فعلی برای ارسال به کاربران: **Spacio-1.5.2-Setup.exe** در [آخرین انتشار](https://github.com/aliahmadi1382/Spacio-Uninstaller/releases/latest).
+
+از نسخهٔ **۱.۵.۱** فایل نصب **Setup** اضافه شده است. نصب به‌صورت پیش‌فرض آیکون سبز Spacio را روی دسکتاپ و در Start Menu می‌سازد. آپدیت داخل برنامه همچنان فعال است و اسکن‌های قبلی باقی می‌مانند.
 
 مرور حذف هنگام تازه‌سازی خودکار هم قابل انتخاب است: کار پس‌زمینه لغو می‌شود و فقط فایل‌ها یا پوشه‌های انتخاب‌شده برای پیش‌نمایش دوباره خوانده می‌شوند. نتیجهٔ قدیمی کل درایو، حذف یک مورد سالم را برای همیشه غیرفعال نمی‌کند. تغییر پس از پیش‌نمایش همچنان حذف را متوقف می‌کند؛ موارد ناقص، سیستمی، ابری و پیوندی محافظت می‌شوند. پنجرهٔ تأیید با ارتفاع نمایشگر تنظیم می‌شود.
 
@@ -24,7 +30,7 @@
 
 ## اجرا
 
-روش پیشنهادی: فایل `Spacio-1.5.1-Setup.exe` را اجرا کنید، گزینهٔ میان‌بر دسکتاپ را نگه دارید و **نصب** را بزنید. مسیر نصب `%LOCALAPPDATA%\Programs\Spacio` است و Administrator لازم نیست. پیش از نصب مجدد یا حذف برنامه، Spacio را ببندید. Setup برنامه‌ها را اجباری نمی‌بندد و نسخهٔ قدیمی‌تر را روی نسخهٔ جدید نصب نمی‌کند. نصاب هم فارسی و انگلیسی دارد.
+روش پیشنهادی: فایل `Spacio-1.5.2-Setup.exe` را اجرا کنید، گزینهٔ میان‌بر دسکتاپ را نگه دارید و **نصب** را بزنید. مسیر نصب `%LOCALAPPDATA%\Programs\Spacio` است و Administrator لازم نیست. پیش از نصب مجدد یا حذف برنامه، Spacio را ببندید. Setup برنامه‌ها را اجباری نمی‌بندد و نسخهٔ قدیمی‌تر را روی نسخهٔ جدید نصب نمی‌کند. نصاب هم فارسی و انگلیسی دارد.
 
 نسخهٔ قابل حمل نیز موجود است: ZIP را استخراج کنید و `Spacio.exe` را همراه `Spacio.exe.config` اجرا کنید. سیستم موردنیاز هر دو روش: Windows 10/11 نسخهٔ ۶۴ بیتی با .NET Framework 4.8. نصب و اجرای اولیه به اینترنت نیاز ندارد؛ دریافت آپدیت به اینترنت نیاز دارد. این نسخه هنوز امضای دیجیتال ناشر ندارد.
 
@@ -72,7 +78,11 @@
 
 ## English
 
-**Setup and responsive deletion review in 1.5.1:** Share `Spacio-1.5.1-Setup.exe` from [Releases](https://github.com/aliahmadi1382/Spacio-Uninstaller/releases/latest). The bilingual, per-user installer writes to `%LOCALAPPDATA%\Programs\Spacio`, creates a Start Menu shortcut and an optional desktop shortcut (selected by default), and registers Spacio in Windows Installed apps. Close Spacio before reinstalling or uninstalling; Setup never forces processes closed or downgrades a newer app. The current build is unsigned.
+**Notion and quieter live monitoring in 1.5.2:** Some installers leave `InstallLocation` empty. Spacio can associate a selected application folder when its registered uninstaller and registered executable icon agree on the same dedicated directory under a standard program root. Missing, mismatched, linked or shared-launcher paths do not grant that association. This routes Notion to **Run app uninstaller** without relaxing AppData file-deletion protections. App reviews show that primary action and Windows Settings, rather than a disabled file-delete confirmation. Remaining caches still require separate review.
+
+**Live · waiting for changes** means idle monitoring. **Changes queued** means a batch is waiting to run. Writes settle for 800 ms (up to five seconds during continuous bursts), unchanged root notifications do not rescan descendants, and costly background transactions get a 3–30 second cooldown. Repeated failures back off instead of retrying at the same short interval. Five-minute recovery validation remains scoped to the current folder. **Pause live / Resume live** stops monitoring for this app session without losing results; manual Refresh remains available. Resuming validates only the current folder. These controls distinguish normal waiting from an active check and provide a way to stop repeated work.
+
+**Setup, introduced in 1.5.1:** Share the current `Spacio-1.5.2-Setup.exe` from [Releases](https://github.com/aliahmadi1382/Spacio-Uninstaller/releases/latest). The bilingual, per-user installer writes to `%LOCALAPPDATA%\Programs\Spacio`, creates a Start Menu shortcut and an optional desktop shortcut (selected by default), and registers Spacio in Windows Installed apps. Close Spacio before reinstalling or uninstalling; Setup never forces processes closed or downgrades a newer app. The current build is unsigned.
 
 In-app updates keep using the versioned ZIP and preserve the installed shortcuts and uninstaller. On normal startup the installed app refreshes its registered version; portable copies cannot change it. Uninstall removes only known installed files and owned shortcuts. Saved scans, preferences, personal files and updater rollback copies remain. Installation uses only the compiler bundled with .NET Framework, with no external installer toolchain.
 
@@ -123,11 +133,11 @@ cd Spacio-Uninstaller
 .\test.ps1
 
 # Build/test a separate version while the previous executable remains open:
-.\build.ps1 -Destination .\dist\v1.5.1
-.\test.ps1 -Executable .\dist\v1.5.1\Spacio.exe
-.\tools\package.ps1 -Executable .\dist\v1.5.1\Spacio.exe
-.\tools\build-setup.ps1 -Executable .\dist\v1.5.1\Spacio.exe
-.\tools\verify-setup.ps1 -Setup .\dist\Spacio-1.5.1-Setup.exe -ReferenceExecutable .\dist\v1.5.1\Spacio.exe
+.\build.ps1 -Destination .\dist\v1.5.2
+.\test.ps1 -Executable .\dist\v1.5.2\Spacio.exe
+.\tools\package.ps1 -Executable .\dist\v1.5.2\Spacio.exe
+.\tools\build-setup.ps1 -Executable .\dist\v1.5.2\Spacio.exe
+.\tools\verify-setup.ps1 -Setup .\dist\Spacio-1.5.2-Setup.exe -ReferenceExecutable .\dist\v1.5.2\Spacio.exe
 ```
 
 `test.ps1` creates isolated fixtures under `.test-data`, including a junction to another generated fixture, paths longer than 260 characters, and 10,000 empty files. Recycling and permanent-cleanup integration checks remove only generated test files/folders. Cleanup checks cover stale previews, known-cache boundaries, protected scan bytes, locked files, running owners, cancellation and command parsing without launching an uninstaller. Bilingual cleanup UI checks use generated cache fixtures under `artifacts` and test acknowledgement and cancellation. Remaining fixtures are available for inspection. Reports and off-screen Persian/English screenshots are saved to `artifacts`.

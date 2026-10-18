@@ -46,12 +46,21 @@ namespace Spacio
                 check(updated.Root.TypeBytes.Sum() == updated.Root.Bytes && updated.Root.FileCount == 2 && updated.Root.FolderCount == 1, "Incremental aggregate bytes, types and counts are consistent");
                 check(Safety.BlockReason(updated.Entries.Single(e => e.Path == first), updated) == null, "Updated entries retain identity membership for cleanup safety");
                 string renamed = Path.Combine(root, "renamed"); Directory.Move(folder, renamed);
+                Directory.SetLastWriteTimeUtc(renamed, DateTime.UtcNow.AddMinutes(-1)); Directory.SetLastWriteTimeUtc(root, DateTime.UtcNow.AddMinutes(-1));
                 var moved = LiveScanner.Refresh(updated, new [] { folder, renamed, Path.Combine(renamed, "first.txt") }, token, null);
                 check(Scanner.SameTree(moved.Root, new Scanner().Scan(root, token, null).Root), "Directory rename preserves contents under the new path and removes the old tree");
                 string nested = Path.Combine(root, "new", "deep", "file.bin"); Directory.CreateDirectory(Path.GetDirectoryName(nested)); File.WriteAllText(nested, "deep");
+                Directory.SetLastWriteTimeUtc(Path.GetDirectoryName(nested), DateTime.UtcNow.AddMinutes(-1));
+                Directory.SetLastWriteTimeUtc(Path.Combine(root, "new"), DateTime.UtcNow.AddMinutes(-1)); Directory.SetLastWriteTimeUtc(root, DateTime.UtcNow.AddMinutes(-1));
                 var tree = LiveScanner.Refresh(moved, new [] { nested }, token, null);
                 check(Scanner.SameTree(tree.Root, new Scanner().Scan(root, token, null).Root), "A nested arrival reads its unknown ancestor and reconstructs all parent links");
                 File.AppendAllText(Path.Combine(renamed, "first.txt"), "unreported edit");
+                int traversals = 0;
+                var rootEvent = LiveScanner.Refresh(tree, new [] { root }, token, p => traversals++);
+                check(Object.ReferenceEquals(rootEvent, tree) && traversals == 0, "Repeated unchanged root notifications do not recursively rescan the drive");
+                Directory.SetLastWriteTimeUtc(root, DateTime.UtcNow.AddMinutes(-2));
+                rootEvent = LiveScanner.Refresh(tree, new [] { root }, token, p => traversals++);
+                check(traversals == 0 && rootEvent.Entries.Single(e => e.Name == "first.txt").Bytes == tree.Entries.Single(e => e.Name == "first.txt").Bytes, "A changed root timestamp updates metadata without inspecting unreported siblings");
                 File.AppendAllText(nested, "reported edit");
                 var partial = LiveScanner.Refresh(tree, new [] { nested }, token, null);
                 check(partial.Entries.Single(e => e.Name == "first.txt").Bytes == tree.Entries.Single(e => e.Name == "first.txt").Bytes, "An ordinary event does not re-enumerate unrelated subtrees");
@@ -104,6 +113,9 @@ namespace Spacio
                 {
                     monitor.Enqueue(cache.FileFor(root)); check(!monitor.HasPending, "Cache writes are excluded from the live notification queue");
                     monitor.Enqueue(first); monitor.Enqueue(first);
+                    check(!monitor.Ready, "Rapid duplicate events wait briefly for the write burst to settle");
+                    AwaitReady(monitor);
+                    check(monitor.Ready, "Settled event batches become ready without requiring a full scan");
                     check(monitor.Take().Length == 1, "Duplicate notifications are batched once");
                     for (int i = 0; i < 4100; i++) monitor.Enqueue(Path.Combine(root, "event-" + i));
                     check(monitor.Take() == null, "A bounded queue falls back to full validation on overflow");
@@ -128,6 +140,11 @@ namespace Spacio
                 File.WriteAllLines(report, log); return result;
             }
             catch (Exception e) { log.Add(e.ToString()); File.WriteAllLines(report, log); return 1; }
+        }
+        private static void AwaitReady(LiveMonitor monitor)
+        {
+            var deadline = Stopwatch.StartNew();
+            while (!monitor.Ready && deadline.ElapsedMilliseconds < 2000) Thread.Sleep(25);
         }
     }
 
@@ -255,6 +272,20 @@ namespace Spacio
             await AwaitLive(() => !busy && snapshot.Entries.Single(e => e.Path == inside).Bytes == new FileInfo(inside).Length);
             check(snapshot.Entries.Single(e => e.Path == outside).Bytes == 7, "Real events continue updating the focused folder without reading siblings");
             liveTimer.Stop();
+            await ToggleLiveAsync();
+            var paused = snapshot;
+            File.AppendAllText(inside, " while paused"); nextLiveAttempt = DateTime.MinValue; await LiveTickAsync();
+            check(livePaused && liveMonitor == null && snapshot == paused && !busy && U<ProgressBar>("Activity").Visibility == Visibility.Collapsed,
+                "Pausing live monitoring stops automatic work and its progress indicator without clearing results");
+            await RefreshSnapshotAsync(true, scope);
+            check(snapshot.Entries.Single(e => e.Path == inside).Bytes == new FileInfo(inside).Length && livePaused && liveMonitor == null,
+                "Manual Refresh stays available and scoped while live monitoring is paused");
+            await ToggleLiveAsync(); nextLiveAttempt = DateTime.MinValue; await LiveTickAsync();
+            var quiet = snapshot; var lastTask = activeRefreshTask; byte[] quietCache = File.ReadAllBytes(cache.FileFor(newRoot));
+            liveMonitor.Take();
+            for (int i = 0; i < 4; i++) { nextLiveAttempt = DateTime.MinValue; await LiveTickAsync(); }
+            check(!livePaused && !busy && snapshot == quiet && activeRefreshTask == lastTask && quietCache.SequenceEqual(File.ReadAllBytes(cache.FileFor(newRoot))),
+                "An idle watched folder performs no repeated refresh and retains exact cache bytes");
             Directory.Move(scope, scope + "-offline"); var offlineBasis = snapshot;
             try
             {
