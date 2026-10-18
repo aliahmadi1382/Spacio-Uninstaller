@@ -236,6 +236,43 @@ namespace Spacio
 
     internal static class CleanupEngine
     {
+        // Fresh previews authorize only eligible selections, never a stale drive tree.
+        internal static CleanupItem InspectSelection(Entry selected, Snapshot saved, CancellationToken token)
+        {
+            var item = new CleanupItem { Path = selected.Path, Owner = selected.Name, Entry = selected, Source = saved,
+                Evidence = "موردی که در فهرست فایل‌ها انتخاب کردید" };
+            var eligibility = saved == null ? null : new Snapshot { Root = saved.Root, Cancelled = saved.Cancelled };
+            item.Failure = Safety.BlockReason(selected, eligibility) ?? "";
+            if (item.Failure.Length != 0) return item;
+            try
+            {
+                token.ThrowIfCancellationRequested(); Paths.RequireLocal(selected.Path); Paths.CheckAncestors(selected.Path);
+                Entry fresh; var entries = new List<Entry>();
+                if (selected.IsDirectory)
+                {
+                    var scan = new Scanner().Scan(selected.Path, token, null); token.ThrowIfCancellationRequested();
+                    fresh = scan.Root; entries.AddRange(scan.Entries);
+                }
+                else { fresh = Scanner.ReadEntry(new FileInfo(selected.Path), null); entries.Add(fresh); }
+                // Copy ancestor identities for safety checks, without scanning siblings
+                // or changing any entry in the displayed or persisted snapshot.
+                var ancestors = new Stack<Entry>();
+                for (var parent = selected.Parent; parent != null; parent = parent.Parent) ancestors.Push(parent);
+                Entry root = null, current = null;
+                foreach (var parent in ancestors)
+                {
+                    var copy = new Entry { Path = parent.Path, Name = parent.Name, IsDirectory = true, Attributes = parent.Attributes, Parent = current };
+                    if (current == null) root = copy; else current.Children.Add(copy);
+                    current = copy; entries.Add(copy);
+                }
+                fresh.Parent = current; current.Children.Add(fresh);
+                item.Entry = fresh; item.Source = new Snapshot { Root = root, Entries = entries };
+                item.Failure = Safety.BlockReason(fresh, item.Source) ?? ""; item.Chosen = item.CanChoose;
+            }
+            catch (OperationCanceledException) { throw; }
+            catch (Exception e) { item.Failure = e.Message; item.Chosen = false; }
+            return item;
+        }
         internal static List<CleanupItem> Collapse(IEnumerable<CleanupItem> items)
         {
             var result = new List<CleanupItem>();

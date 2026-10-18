@@ -149,31 +149,48 @@ namespace Spacio
         {
             await PrepareCleanupReview(new List<CleanupItem>(), app, app.Family.Length == 0 ? new string[0] : new [] { app.Family });
         }
-        private async Task ReviewSelectedCleanup()
+        private async Task ReviewSelectedCleanup(Action<Window> onLoaded = null)
         {
-            if (busy || stale || snapshot == null) return;
-            var entries = Safety.CollapseSelection(Selected().Select(r => r.Entry)); if (entries.Count == 0) return;
-            SetBusy(true, false);
+            if (reviewingCleanup || cleanupCancel != null || (busy && !refreshingAutomatically) || snapshot == null || snapshot.Cancelled) return;
+            var paths = Safety.CollapseSelection(Selected().Select(r => r.Entry)).Select(e => e.Path).ToArray(); if (paths.Length == 0) return;
+            reviewingCleanup = true;
             try
             {
+                if (refreshingAutomatically && activeRefreshTask != null) { refreshCancel.Cancel(); await activeRefreshTask; }
+                if (closing) return;
+                SetBusy(true, false);
+                var entries = snapshot.Entries.Where(e => paths.Contains(e.Path, StringComparer.OrdinalIgnoreCase)).ToList();
+                if (entries.Count != paths.Length) throw new IOException(L.T("مورد در حین اسکن جابه‌جا شده است."));
                 var apps = await Task.Run(() => InstalledApps.Read(CancellationToken.None));
                 var rows = new List<CleanupItem>(); var families = new HashSet<string>(); InstalledApp selectedApp = null;
-                foreach (var entry in entries)
+                using (var operation = new CancellationTokenSource())
                 {
-                    var app = InstalledApps.Owner(entry.Path, apps);
-                    if (app != null) { if (entries.Count == 1) selectedApp = app; if (app.Family.Length > 0) families.Add(app.Family); }
-                    rows.Add(new CleanupItem { Path = entry.Path, Owner = app == null ? entry.Name : app.Name, Entry = entry, Source = snapshot,
-                        Evidence = "موردی که در فهرست فایل‌ها انتخاب کردید", Failure = app != null ? "نرم‌افزار نصب‌شده؛ حذف‌کنندهٔ برنامه را اجرا کنید" : Safety.BlockReason(entry, snapshot) ?? "", Chosen = app == null });
+                    cleanupCancel = operation; UpdateCleanupControls();
+                    try
+                    {
+                        var basis = snapshot;
+                        foreach (var entry in entries)
+                        {
+                            operation.Token.ThrowIfCancellationRequested();
+                            var app = InstalledApps.Owner(entry.Path, apps);
+                            if (app != null) { if (entries.Count == 1) selectedApp = app; if (app.Family.Length > 0) families.Add(app.Family); }
+                            var row = app == null ? await Task.Run(() => CleanupEngine.InspectSelection(entry, basis, operation.Token), operation.Token) :
+                                new CleanupItem { Path = entry.Path, Owner = app.Name, Entry = entry, Source = basis, Evidence = "موردی که در فهرست فایل‌ها انتخاب کردید", Failure = "نرم‌افزار نصب‌شده؛ حذف‌کنندهٔ برنامه را اجرا کنید" };
+                            rows.Add(row);
+                        }
+                    }
+                    finally { cleanupCancel = null; }
                 }
                 foreach (var spec in await Task.Run(() => CacheCatalog.Discover(cleanupRoots, CancellationToken.None)))
                     if (entries.Any(e => Paths.Within(e.Path, spec.Path))) families.Add(spec.Family);
                 SetBusy(false, false);
-                await PrepareCleanupReview(rows, selectedApp, families.ToArray());
+                await PrepareCleanupReview(rows, selectedApp, families.ToArray(), onLoaded);
             }
+            catch (OperationCanceledException) { SetStatus(L.T("بررسی متوقف شد؛ نتیجهٔ قبلی حفظ شده است")); }
             catch (Exception e) { Error(e); }
-            finally { SetBusy(false, false); }
+            finally { reviewingCleanup = false; SetBusy(false, false); }
         }
-        private async Task PrepareCleanupReview(List<CleanupItem> selected, InstalledApp app, string[] families)
+        private async Task PrepareCleanupReview(List<CleanupItem> selected, InstalledApp app, string[] families, Action<Window> onLoaded = null)
         {
             if (busy) return;
             var operation = new CancellationTokenSource(); cleanupCancel = operation; var token = operation.Token; SetBusy(true, false);
@@ -183,13 +200,13 @@ namespace Spacio
                 var related = await Task.Run(() => CacheCatalog.Discover(cleanupRoots, token).Where(s => families.Contains(s.Family)).Select(s => CacheCatalog.Inspect(s, token, cleanupRoots)).ToList(), token);
                 foreach (var row in related) { row.Chosen = false; selected.Add(row); }
                 SetBusy(false, false);
-                await ReviewCleanupItems(selected, app, false);
+                await ReviewCleanupItems(selected, app, false, onLoaded);
             }
             catch (OperationCanceledException) { }
             catch (Exception e) { Error(e); }
             finally { if (cleanupCancel == operation) cleanupCancel = null; operation.Dispose(); SetBusy(false, false); }
         }
-        private async Task ReviewCleanupItems(List<CleanupItem> selected, InstalledApp app, bool refresh = true)
+        private async Task ReviewCleanupItems(List<CleanupItem> selected, InstalledApp app, bool refresh = true, Action<Window> onLoaded = null)
         {
             if (selected.Count == 0 && app == null) return;
             if (refresh)
@@ -203,9 +220,9 @@ namespace Spacio
                 }
                 finally { cleanupCancel = null; operation.Dispose(); SetBusy(false, false); }
             }
-            reviewingCleanup = true; CleanupChoice choice;
-            try { choice = ShowCleanupReview(selected, app); }
-            finally { reviewingCleanup = false; }
+            bool alreadyReviewing = reviewingCleanup; reviewingCleanup = true; CleanupChoice choice;
+            try { choice = ShowCleanupReview(selected, app, onLoaded); }
+            finally { reviewingCleanup = alreadyReviewing; }
             if (!choice.Confirmed) return;
             if (choice.Uninstall)
             {
@@ -279,12 +296,16 @@ namespace Spacio
         private CleanupChoice ShowCleanupReview(List<CleanupItem> items, InstalledApp app, Action<Window> onLoaded = null)
         {
             var choice = new CleanupChoice { Items = items };
-            var dialog = new Window { Owner = Window, Title = L.T("مرور حذف و کش‌های مرتبط"), Width = 1120, Height = 790, MinWidth = 980, MinHeight = 650,
+            var work = System.Windows.Forms.Screen.FromHandle(new WindowInteropHelper(Window).Handle).WorkingArea;
+            var source = PresentationSource.FromVisual(Window);
+            var available = source.CompositionTarget.TransformFromDevice.Transform(new Point(work.Width, work.Height));
+            double width = Math.Min(1120, available.X - 24), height = Math.Min(790, available.Y - 24);
+            var dialog = new Window { Owner = Window, Title = L.T("مرور حذف و کش‌های مرتبط"), Width = width, Height = height, MinWidth = Math.Min(980, width), MinHeight = Math.Min(500, height),
                 Background = B("#10181C"), Foreground = B("#E4EFEB"), FontFamily = Window.FontFamily, FontSize = 12, FlowDirection = Window.FlowDirection,
                 WindowStartupLocation = WindowStartupLocation.CenterOwner, Resources = Window.Resources };
             var layout = new Grid { Margin = new Thickness(22) }; dialog.Content = layout;
-            foreach (var height in new [] { new GridLength(app == null ? 110 : 150), new GridLength(1, GridUnitType.Star), new GridLength(28), new GridLength(1, GridUnitType.Star), new GridLength(105) }) layout.RowDefinitions.Add(new RowDefinition { Height = height });
-            var heading = new StackPanel(); layout.Children.Add(heading);
+            foreach (var rowHeight in new [] { GridLength.Auto, new GridLength(1, GridUnitType.Star), new GridLength(28), new GridLength(1, GridUnitType.Star), GridLength.Auto }) layout.RowDefinitions.Add(new RowDefinition { Height = rowHeight });
+            var heading = new StackPanel { Margin = new Thickness(0, 0, 0, 12) }; layout.Children.Add(heading);
             heading.Children.Add(new TextBlock { Text = app == null ? L.T("قبل از حذف، مسیرها و محتوای دقیق را بررسی کنید") : app.Name + "  ·  " + app.Version, FontSize = 20, FontWeight = FontWeights.SemiBold });
             heading.Children.Add(new TextBlock { Text = L.T("کش‌های اضافی و موارد مشترک یا احتمالی خودکار انتخاب نمی‌شوند. انتخاب ردیف، همهٔ فایل‌های آن را در جدول پایین نشان می‌دهد."), Foreground = B("#9EBBB0"), TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 9, 0, 0) });
             heading.Children.Add(new TextBlock { Text = L.T(app == null ? "برای هر فایل، کش اختصاصی قابل تشخیص نیست؛ فقط ارتباط‌های شناخته‌شده نمایش داده می‌شوند." : "حذف‌کنندهٔ برنامه جدا اجرا می‌شود. کش‌ها فقط با انتخاب و تأیید پاک‌سازی حذف می‌شوند."), TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 7, 0, 0), Foreground = B("#B8ACA0") });
@@ -314,13 +335,13 @@ namespace Spacio
             };
             if (items.Count > 0) grid.SelectedIndex = 0;
             var footer = new Grid(); Grid.SetRow(footer, 4); layout.Children.Add(footer);
-            footer.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto }); footer.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto }); footer.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
+            footer.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto }); footer.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto }); footer.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
             var permanent = new CheckBox { Content = L.T("حذف دائمی به‌جای سطل بازیافت"), IsChecked = true, Margin = new Thickness(0, 10, 0, 6), Foreground = B("#EDB2A4") }; footer.Children.Add(permanent);
             permanent.Name = "ReviewPermanent";
             var acknowledge = new CheckBox { Content = L.T("می‌دانم موارد حذف دائمی از سطل بازیافت قابل بازگردانی نیستند"), Foreground = B("#EDB2A4"), Visibility = Visibility.Collapsed }; Grid.SetRow(acknowledge, 1); footer.Children.Add(acknowledge);
             acknowledge.Name = "ReviewAcknowledge";
             var summary = new TextBlock { HorizontalAlignment = HorizontalAlignment.Right, Margin = new Thickness(8, 10, 0, 0), Foreground = B("#9EBBB0") }; footer.Children.Add(summary);
-            var buttons = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right, VerticalAlignment = VerticalAlignment.Bottom }; Grid.SetRow(buttons, 2); footer.Children.Add(buttons);
+            var buttons = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right, Margin = new Thickness(0, 12, 0, 0) }; Grid.SetRow(buttons, 2); footer.Children.Add(buttons);
             var cancel = ReviewButton("لغو"); cancel.Click += delegate { dialog.DialogResult = false; }; buttons.Children.Add(cancel);
             cancel.Name = "ReviewCancel";
             if (app != null)

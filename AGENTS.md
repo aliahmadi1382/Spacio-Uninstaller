@@ -43,7 +43,9 @@ The user wants other users to receive updates inside Spacio. For completed
 user-facing app changes, increment the assembly/file versions together, update
 `CHANGELOG.md`, build and run appropriate checks, and package with
 `tools/package.ps1`. Publish a stable GitHub Release on the matching version tag
-after pushing the tested source. Upload the versioned ZIP and checksum file to a
+after pushing the tested source. Build Setup using `tools/build-setup.ps1` after
+packaging, and verify it with `tools/verify-setup.ps1`. Upload the versioned ZIP,
+Setup executable and checksum file to a
 draft first, then publish the complete release. Follow the naming and packaging
 contract documented in `README.md` so installed apps can discover and verify it.
 Keep older releases and their assets for rollback. Documentation-only changes
@@ -51,6 +53,11 @@ need a commit and push but do not need an app release.
 
 This is a workflow for work performed in this project; it does not require a
 background watcher or a recurring automation.
+
+Setup installs per user under `%LOCALAPPDATA%\Programs\Spacio`. Preserve its
+shortcuts and uninstaller during ZIP-based updates. Uninstall only the fixed
+installed-file list and owned shortcuts, retaining saved data and unknown files.
+Test installation/removal only with isolated directories and registry keys.
 
 ## Preserve saved scans across updates
 

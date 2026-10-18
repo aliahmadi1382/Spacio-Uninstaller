@@ -4,6 +4,10 @@
 
 برنامهٔ دسکتاپ ویندوز برای بررسی حجم فایل‌ها و پوشه‌ها، با رابط فارسی و انگلیسی.
 
+نسخهٔ **۱.۵.۱** فایل نصب **Setup** دارد. برای کاربران ویندوزی، `Spacio-1.5.1-Setup.exe` را از [آخرین انتشار](https://github.com/aliahmadi1382/Spacio-Uninstaller/releases/latest) بفرستید. نصب به‌صورت پیش‌فرض آیکون سبز Spacio را روی دسکتاپ و در Start Menu می‌سازد. آپدیت داخل برنامه همچنان فعال است و اسکن‌های قبلی باقی می‌مانند.
+
+مرور حذف هنگام تازه‌سازی خودکار هم قابل انتخاب است: کار پس‌زمینه لغو می‌شود و فقط فایل‌ها یا پوشه‌های انتخاب‌شده برای پیش‌نمایش دوباره خوانده می‌شوند. نتیجهٔ قدیمی کل درایو، حذف یک مورد سالم را برای همیشه غیرفعال نمی‌کند. تغییر پس از پیش‌نمایش همچنان حذف را متوقف می‌کند؛ موارد ناقص، سیستمی، ابری و پیوندی محافظت می‌شوند. پنجرهٔ تأیید با ارتفاع نمایشگر تنظیم می‌شود.
+
 نسخهٔ **۱.۵.۰** صفحهٔ کامل **Cache** و **برنامه‌های نصب‌شده** را اضافه می‌کند. فایل یا پوشه را انتخاب کنید و **مرور حذف و کش‌های مرتبط** را بزنید: مسیر، حجم، نوع ارتباط و فهرست کامل محتوای شناسایی‌شده قبل از حذف نمایش داده می‌شود. **حذف دائمی** پیش‌فرض است و هر بار به تأیید جزئیات و پذیرش غیرقابل‌بازگردانی از سطل بازیافت نیاز دارد؛ می‌توانید آن را به انتقال به سطل بازیافت تغییر دهید. کش اضافی، مشترک و پوشهٔ احتمالی خودکار انتخاب نمی‌شوند.
 
 صفحهٔ Cache مسیرهای شناخته‌شدهٔ کاربر فعلی را بررسی می‌کند: کش Chrome، Edge، Brave، Firefox، VS Code، Discord، Slack، Steam، کش رسانه‌ای مشترک Adobe و کش shaderهای DirectX/NVIDIA/AMD. پوشه‌های با نام `cache` یا `.cache` در اسکن بازشده فقط با برچسب **نیازمند بررسی** نمایش داده می‌شوند. این فهرست همهٔ کش‌های هر سیستم یا هر فایل را تضمین نمی‌کند؛ مسیرهای سفارشی، حساب‌های دیگر، داده‌های حساب/کوکی/رمز، کش نصب‌کننده‌ها و فایل‌های شخصی به‌عنوان کش شناخته‌شده حذف نمی‌شوند. پوشهٔ اصلی کش نگه داشته می‌شود و فقط محتوای مرورشده پاک می‌شود. کش‌های مشترک متعلق به یک فایل خاص نیستند؛ بازسازی آن‌ها ممکن است اجرای بعدی برنامه را کندتر کند.
@@ -20,7 +24,11 @@
 
 ## اجرا
 
-فایل `Spacio.exe` را از بستهٔ نسخهٔ جدید اجرا کنید. فایل `Spacio.exe.config` باید کنار آن بماند. نصب، اینترنت یا دسترسی Administrator لازم نیست. سیستم موردنیاز: Windows 10/11 نسخهٔ ۶۴ بیتی با .NET Framework 4.8.
+روش پیشنهادی: فایل `Spacio-1.5.1-Setup.exe` را اجرا کنید، گزینهٔ میان‌بر دسکتاپ را نگه دارید و **نصب** را بزنید. مسیر نصب `%LOCALAPPDATA%\Programs\Spacio` است و Administrator لازم نیست. پیش از نصب مجدد یا حذف برنامه، Spacio را ببندید. Setup برنامه‌ها را اجباری نمی‌بندد و نسخهٔ قدیمی‌تر را روی نسخهٔ جدید نصب نمی‌کند. نصاب هم فارسی و انگلیسی دارد.
+
+نسخهٔ قابل حمل نیز موجود است: ZIP را استخراج کنید و `Spacio.exe` را همراه `Spacio.exe.config` اجرا کنید. سیستم موردنیاز هر دو روش: Windows 10/11 نسخهٔ ۶۴ بیتی با .NET Framework 4.8. نصب و اجرای اولیه به اینترنت نیاز ندارد؛ دریافت آپدیت به اینترنت نیاز دارد. این نسخه هنوز امضای دیجیتال ناشر ندارد.
+
+برای حذف خود Spacio از **Installed apps** ویندوز استفاده کنید. فقط فایل‌های مشخص برنامه، میان‌برهای متعلق به آن و ثبت نصب حذف می‌شوند؛ اسکن‌های `%LOCALAPPDATA%\Spacio\Scans`، زبان، فایل‌های شخصی و نسخه‌های بازگشت آپدیت حفظ می‌شوند. نصب مجدد نتیجه‌های قبلی را باز می‌کند.
 
 1. از کلید بالای پنجره برای تغییر **فارسی / English** استفاده کنید. زبان انتخابی برای اجرای بعدی ذخیره می‌شود.
 2. روی درایو در نوار کناری کلیک کنید، یا پوشه‌ای انتخاب کنید و **باز کردن / اسکن** را بزنید. مسیر جدید اسکن می‌شود؛ مسیر قبلی از نتیجهٔ ذخیره‌شده باز می‌شود و تغییرات خودکار بررسی می‌شوند. **تازه‌سازی ↻ / Refresh** فقط مسیر داخل کادر و زیرپوشه‌هایش را در پس‌زمینه بررسی می‌کند. با ورود به پوشه، مسیر کادر نیز تغییر می‌کند. مثلاً در `C:\Projects\Git-Hub`، Refresh کل درایو C را دوباره نمی‌خواند؛ فقط حجم مجموع پوشه‌های بالاتر با دادهٔ جدید محاسبه می‌شود. جدول هنگام بررسی در دسترس می‌ماند.
@@ -55,7 +63,7 @@
 - اسکن قابل توقف است و نتیجهٔ متوقف‌شده واضحاً ناقص اعلام می‌شود. پاک‌سازی بر اساس اسکن متوقف‌شده فعال نمی‌شود.
 - اسکن‌های پایان‌یافته به‌صورت فشرده در `%LOCALAPPDATA%\Spacio\Scans` ذخیره می‌شوند؛ خطاها و موارد بررسی‌نشده نیز حفظ می‌شوند. اسکن لغوشده نتیجهٔ کامل قبلی را جایگزین نمی‌کند. ذخیرهٔ نتیجه ممکن است بسته به تعداد فایل‌ها چند ثانیه طول بکشد و فضای دیسک مصرف می‌کند. اگر ذخیره ممکن نباشد، پیام مشخصی نمایش داده می‌شود و نتیجه در حافظهٔ همین اجرا باقی می‌ماند.
 - زمان آخرین نتیجه کنار نقشهٔ فضا نمایش داده می‌شود. بررسی بدون تغییر، همان زمان و فایل ذخیرهٔ قبلی را حفظ می‌کند. نتیجهٔ خراب یا ناقص با اسکن خودکار جایگزین نمی‌شود؛ برای مسیر بدون نتیجهٔ معتبر، اسکن را بزنید. قطع دسترسی یا توقف Refresh نتیجهٔ سالم قبلی را پاک نمی‌کند. محتوای قبلاً شناخته‌شدهٔ مسیرهایی که دسترسی‌شان قطع شده حفظ و ناقص علامت‌گذاری می‌شود.
-- پس از تلاش پاک‌سازی، نتیجه‌های مرتبط «تغییریافته» علامت می‌خورند. بررسی خودکار نتیجهٔ بازشده را به‌روز می‌کند؛ تا پایان بررسی، پاک‌سازی بعدی غیرفعال است. فایل انتخابی پیش از حذف دوباره بررسی می‌شود.
+- پس از تلاش پاک‌سازی، نتیجه‌های مرتبط «تغییریافته» علامت می‌خورند و زیرشاخه‌های مربوط به‌روز می‌شوند. برای حذف بعدی، فقط موارد انتخاب‌شده پیش از نمایش جزئیات دوباره بررسی می‌شوند؛ تأیید تازه برای هر عملیات لازم است. این بررسی، وضعیت سایر بخش‌های قدیمی اسکن را معتبر اعلام نمی‌کند.
 - ریشهٔ اسکن، مسیرهای سیستم و برنامه‌ها، AppData، پروفایل کاربران، محل اجرای خود برنامه و پوشه‌های حاوی موارد سیستمی یا بررسی‌نشده محافظت می‌شوند.
 - قبل از انتقال، فرادادهٔ فایل یا تمام درخت پوشه با نتیجهٔ اسکن مقایسه می‌شود. تغییرات مشاهده‌شده عملیات را متوقف می‌کنند. این مقایسه قفل فایل یا snapshot اتمیک نیست؛ هنگام پاک‌سازی از تغییر هم‌زمان پوشهٔ انتخابی خودداری کنید.
 - عملیات از Windows Shell و `IFileOperation` استفاده می‌کند. حالت حذف دائمی فقط پس از تأیید صریح اجرا می‌شود. در حالت سطل بازیافت، اگر ویندوز امکان بازیافت را نداشته باشد، callback حذف دائمی را رد می‌کند. سطل بازیافت خودکار خالی نمی‌شود. استثنای حفاظت AppData فقط برای مسیر دقیق کش‌های پشتیبانی‌شده است؛ کش با محتوای ناقص، پیوندی، ابری یا سیستمی پاک نمی‌شود. اسکن‌ها و تنظیمات Spacio محافظت می‌شوند.
@@ -63,6 +71,12 @@
 - زبان در `%LOCALAPPDATA%\Spacio\language.txt` ذخیره می‌شود. گزارش CSV تنها در مسیر انتخاب‌شده توسط شما نوشته می‌شود.
 
 ## English
+
+**Setup and responsive deletion review in 1.5.1:** Share `Spacio-1.5.1-Setup.exe` from [Releases](https://github.com/aliahmadi1382/Spacio-Uninstaller/releases/latest). The bilingual, per-user installer writes to `%LOCALAPPDATA%\Programs\Spacio`, creates a Start Menu shortcut and an optional desktop shortcut (selected by default), and registers Spacio in Windows Installed apps. Close Spacio before reinstalling or uninstalling; Setup never forces processes closed or downgrades a newer app. The current build is unsigned.
+
+In-app updates keep using the versioned ZIP and preserve the installed shortcuts and uninstaller. On normal startup the installed app refreshes its registered version; portable copies cannot change it. Uninstall removes only known installed files and owned shortcuts. Saved scans, preferences, personal files and updater rollback copies remain. Installation uses only the compiler bundled with .NET Framework, with no external installer toolchain.
+
+Deletion review can interrupt automatic validation instead of remaining disabled on busy folders. A stale saved drive view gets a fresh preview of just the eligible selected targets; unrelated siblings are not rescanned or declared current. Incomplete/protected targets remain blocked and metadata is checked again after confirmation. The confirmation window fits the monitor's available height so its actions remain visible.
 
 **Cache review and app removal in 1.5.0:** Open **Cache** in the sidebar to inspect known cache paths, logical sizes, file counts and ownership. Search by app or path, select rows, and use **Review cleanup** to inspect every scanned file/folder before confirming. File results use the same review workflow. Permanent deletion is the default and requires an acknowledgement plus explicit confirmation every time. Uncheck permanent deletion to use the Recycle Bin instead. Additional, shared and unverified cache candidates are never preselected. Cancel leaves files unchanged.
 
@@ -74,7 +88,7 @@ The catalogue covers default current-user Chrome/Edge/Brave profile Cache, Code 
 
 **Full results pages in 1.4.1:** Open Folders & files, Largest files, Older files or File types from the sidebar. The dashboard table also has **Open full page**. The results use the space occupied by the overview cards and map, retaining the same virtualized table, selection, search and filters. Live updates, folder navigation, cleanup and CSV export remain available. **Back to overview** restores the dashboard.
 
-Download the portable ZIP from [Releases](https://github.com/aliahmadi1382/Spacio-Uninstaller/releases/latest), extract it, and run `Spacio.exe` alongside `Spacio.exe.config`. Requires 64-bit Windows 10/11 and .NET Framework 4.8. No installation or administrator access is required.
+Use Setup or download the portable ZIP from [Releases](https://github.com/aliahmadi1382/Spacio-Uninstaller/releases/latest), extract it, and run `Spacio.exe` alongside `Spacio.exe.config`. Requires 64-bit Windows 10/11 and .NET Framework 4.8. Administrator access is not required.
 
 **Version 1.4 — live results:** Saved results appear first, then background validation reconciles edits made while the app was closed. The open scan is monitored for file/folder creation, deletion, rename, size/date and attribute changes. Notifications are batched; ordinary events read affected paths and rebuild aggregates on a worker. Large bursts may take longer. **Refresh** validates only the path in the input and its descendants, without clearing the table or blocking navigation. Opening a folder updates that path. A subfolder refresh keeps the surrounding cached drive scan and recalculates its ancestor totals from saved sibling data; it does not walk the rest of the drive. Drive free-space cards refresh every ten seconds. Opening another cached folder switches live monitoring to that folder. Existing 1.2 caches remain readable; missing/corrupt caches do not trigger an automatic scan.
 
@@ -109,9 +123,11 @@ cd Spacio-Uninstaller
 .\test.ps1
 
 # Build/test a separate version while the previous executable remains open:
-.\build.ps1 -Destination .\dist\v1.4
-.\test.ps1 -Executable .\dist\v1.4\Spacio.exe
-.\tools\package.ps1 -Executable .\dist\v1.4\Spacio.exe
+.\build.ps1 -Destination .\dist\v1.5.1
+.\test.ps1 -Executable .\dist\v1.5.1\Spacio.exe
+.\tools\package.ps1 -Executable .\dist\v1.5.1\Spacio.exe
+.\tools\build-setup.ps1 -Executable .\dist\v1.5.1\Spacio.exe
+.\tools\verify-setup.ps1 -Setup .\dist\Spacio-1.5.1-Setup.exe -ReferenceExecutable .\dist\v1.5.1\Spacio.exe
 ```
 
 `test.ps1` creates isolated fixtures under `.test-data`, including a junction to another generated fixture, paths longer than 260 characters, and 10,000 empty files. Recycling and permanent-cleanup integration checks remove only generated test files/folders. Cleanup checks cover stale previews, known-cache boundaries, protected scan bytes, locked files, running owners, cancellation and command parsing without launching an uninstaller. Bilingual cleanup UI checks use generated cache fixtures under `artifacts` and test acknowledgement and cancellation. Remaining fixtures are available for inspection. Reports and off-screen Persian/English screenshots are saved to `artifacts`.
@@ -122,7 +138,9 @@ Cache checks cover persistence, startup selection, offline paths, normalization,
 
 ## Publishing updates
 
-For each user-facing release, increment both versions in `src/AssemblyInfo.cs`, update this changelog, build, test, and run `tools/package.ps1`. Commit and push the source, tag that commit as `vMAJOR.MINOR.PATCH`, then publish a stable GitHub Release with `Spacio-MAJOR.MINOR.PATCH-win-x64.zip` and its SHA256SUMS file. Keep `Spacio.exe` and `Spacio.exe.config` at the ZIP root. Upload all assets to a draft before publishing it; the GitHub API must expose an asset SHA256 digest. Keep old release assets available for rollback. Commits alone do not notify installed apps; publishing the stable release makes the update discoverable. Use the Releases/latest link when sharing the app so users always reach the newest stable version.
+For each user-facing release, increment both versions in `src/AssemblyInfo.cs`, update this changelog, build, test, run `tools/package.ps1`, then `tools/build-setup.ps1` and `tools/verify-setup.ps1`. Setup embeds and verifies the exact ZIP payload; its build writes SHA256SUMS entries for both ZIP and Setup. Do not rerun packaging afterward without rebuilding Setup. Commit and push the source, tag that commit as `vMAJOR.MINOR.PATCH`, then publish a stable GitHub Release with `Spacio-MAJOR.MINOR.PATCH-win-x64.zip`, `Spacio-MAJOR.MINOR.PATCH-Setup.exe` and `Spacio-MAJOR.MINOR.PATCH-SHA256SUMS.txt`. Keep `Spacio.exe` and `Spacio.exe.config` at the ZIP root for existing updaters. Upload all assets to a draft before publishing it; the GitHub API must expose asset SHA256 digests. Keep old release assets available for rollback. Commits alone do not notify installed apps; publishing the stable release makes the update discoverable. Use the Releases/latest link when sharing the app so users always reach the newest stable version.
+
+`verify-setup.ps1` installs only into generated Unicode fixture directories with isolated registry keys and shortcuts. It tests reinstall, optional shortcuts, collision protection, locked files, concurrent Setup, rollback after installation/uninstallation errors, downgrade rejection and real updater replacement/restart with saved-scan preservation. Real saved scans/preferences are compared read-only. It never installs over or uninstalls the user's Spacio. Use `-PublicUpgrade` with a Setup fixture built from an older payload after publication to exercise the actual release feed from a Setup installation. Installer sources are in `installer/`; the shared registration helper is `src/InstallationRegistration.cs`. Windows shortcuts use [IShellLinkW](https://learn.microsoft.com/en-us/windows/win32/api/shobjidl_core/nn-shobjidl_core-ishelllinkw).
 
 After publication, `tools/verify-upgrade.ps1 -PreviousExecutable <path-to-an-older-Spacio.exe>` verifies the actual public feed, download, checksums, installation, and restart using that older release's updater. Its isolated startup smoke mode creates a saved scan with the old version and verifies restoration before live monitoring starts; the cache bytes, scan timestamp and original scanned file must remain unchanged. Use a previous version from 1.3.0 onward. The script creates isolated application copies under `.test-data`; it never replaces the supplied original executable. This integration check needs internet and a newer public release. Separate live tests verify subsequent automatic reconciliation. The loading smoke check also captures 48 rendered frames and verifies central-scene movement while the main UI thread is blocked.
 

@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.5.1
+
+- Add a bilingual Windows Setup executable with the green Spacio icon, default desktop shortcut, Start Menu entry and Windows Installed apps registration. Install per user without administrator access.
+- Keep the existing ZIP-based in-app updater compatible with Setup installations; retain shortcuts/uninstaller and refresh the registered version on app startup. Preserve scans, preferences and user files across installation, updates, reinstall and uninstall.
+- Verify embedded payload hashes, reject downgrades, preserve unrelated files/shortcuts, serialize Setup operations and roll back failed installation/removal. Never force a running application closed.
+- Keep deletion review available during automatic validation. Cancel and await automatic work, then freshly inspect only eligible selected targets before review, including from stale saved views; keep unrelated cached branches untouched and all existing system/link/cloud/incomplete protections.
+- Fit cleanup confirmation to the available monitor size and keep the confirmation controls visible on short displays. Keep permanent deletion dependent on acknowledgement and confirmation each time.
+- Test actual confirmed fixture deletion through the selection UI, automatic-refresh cancellation, stale-view revalidation, short-display layout and Setup/updater integration. Destructive checks use generated isolated fixtures only.
+
 ## 1.5.0
 
 - Add full-height Cache and Installed apps pages in Persian and English, with search, paths, logical sizes, file counts, ownership and explicit known/shared/unverified classifications.

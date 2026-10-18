@@ -467,8 +467,8 @@ namespace Spacio
             var selected = Safety.CollapseSelection(Selected().Select(r => r.Entry));
             U<Button>("RevealButton").IsEnabled = selected.Count == 1;
             string reason = snapshot == null ? "ابتدا اسکن کامل انجام دهید" : selected.Select(e => Safety.BlockReason(e, snapshot)).FirstOrDefault(x => x != null);
-            U<Button>("RecycleButton").IsEnabled = !busy && !stale && snapshot != null && !snapshot.Cancelled && selected.Count > 0;
-            U<Button>("RecycleButton").ToolTip = stale ? L.T("داده‌ها تغییر کرده‌اند؛ دوباره اسکن کنید") : L.T(reason);
+            U<Button>("RecycleButton").IsEnabled = (!busy || refreshingAutomatically) && !reviewingCleanup && cleanupCancel == null && snapshot != null && !snapshot.Cancelled && selected.Count > 0;
+            U<Button>("RecycleButton").ToolTip = L.T(stale || refreshingAutomatically ? "موارد انتخاب‌شده پیش از تأیید حذف دوباره بررسی می‌شوند" : reason);
             U<TextBlock>("SelectionInfo").Text = selected.Count == 0 ? L.T("انتخابی ندارید") : selected.Count.ToString("N0") + " " + L.T("انتخاب‌شده") + "  ·  " + Formats.Size(selected.Sum(x => x.Bytes)) + (reason == null ? "" : "  ·  " + L.T(reason));
         }
         private int mapVersion;
@@ -656,7 +656,7 @@ namespace Spacio
             if (args.Length > 1 && args[0] == "--cleanup-test") return CleanupTests.Run(args[1]);
             bool startupTest = args.Length >= 3 && args[0] == "--startup-smoke";
             bool preview = startupTest || (args.Length >= 3 && args[0] == "--ui-smoke");
-            if (!preview) L.Load();
+            if (!preview) { L.Load(); InstallationRegistration.Refresh(Assembly.GetExecutingAssembly().Location, Updates.Current); }
             var app = new Application { ShutdownMode = ShutdownMode.OnMainWindowClose };
             app.DispatcherUnhandledException += (s, e) => {
                 if (preview) { File.WriteAllText(args[2] + ".error.txt", e.Exception.ToString()); app.Shutdown(1); }

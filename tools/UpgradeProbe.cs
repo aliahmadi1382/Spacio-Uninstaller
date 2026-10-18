@@ -31,9 +31,17 @@ internal static class UpgradeProbe
             // This file would enter the results if startup silently rescanned after upgrading.
             File.WriteAllText(Path.Combine(data, "spacio-after-close-marker.tmp"), "created after saved scan");
             var previous = Updates.Current;
-            var release = Updates.CheckAsync(CancellationToken.None).GetAwaiter().GetResult();
-            Require(release != null && release.Version > previous, "No newer public release available for this previous executable.");
-            string stage = Updates.DownloadAsync(release, null, CancellationToken.None).GetAwaiter().GetResult();
+            bool local = args.Length > 2 && args[2] == "--local";
+            var release = local ? new ReleaseInfo { Version = previous } : Updates.CheckAsync(CancellationToken.None).GetAwaiter().GetResult();
+            Require(release != null && (local || release.Version > previous), "No newer public release available for this previous executable.");
+            string stage;
+            if (local)
+            {
+                stage = Path.Combine(Path.GetDirectoryName(report), "local-stage"); Directory.CreateDirectory(stage);
+                string source = typeof(Updates).Assembly.Location;
+                File.Copy(source, Path.Combine(stage, "Spacio.exe")); File.Copy(source + ".config", Path.Combine(stage, "Spacio.exe.config"));
+            }
+            else stage = Updates.DownloadAsync(release, null, CancellationToken.None).GetAwaiter().GetResult();
             using (var parent = Process.Start(new ProcessStartInfo(target, "--update-test-host " + UpdateInstaller.Quote(signal)) { UseShellExecute = false, CreateNoWindow = true, WindowStyle = ProcessWindowStyle.Hidden }))
             {
                 try
@@ -51,7 +59,7 @@ internal static class UpgradeProbe
                 }
                 finally { File.WriteAllText(signal + ".exit", "exit"); parent.WaitForExit(5000); }
             }
-            File.WriteAllText(report, "PASS: previous release " + previous.ToString(3) + " discovers, downloads, verifies, installs and restarts public release " + release.Version.ToString(3) + "\nPASS: original scan file, scan timestamp and scanned user file are unchanged; the new app restores the old scan without rescanning.\nOnly an isolated application copy was replaced.");
+            File.WriteAllText(report, (local ? "PASS: Setup-installed copy supports the existing updater's replacement and restart workflow" : "PASS: previous release " + previous.ToString(3) + " discovers, downloads, verifies, installs and restarts public release " + release.Version.ToString(3)) + "\nPASS: original scan file, scan timestamp and scanned user file are unchanged; the new app restores the old scan without rescanning.\nOnly an isolated application copy was replaced.");
             return 0;
         }
         catch (Exception e) { File.WriteAllText(report, e.ToString()); return 1; }

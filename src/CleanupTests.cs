@@ -96,6 +96,23 @@ namespace Spacio
                 string ordinaryPath = Put(area, @"User files\Remove\nested\فارسی.txt");
                 string ordinaryRoot = Path.Combine(area, "User files"); Settle(ordinaryRoot);
                 var ordinary = Ordinary(ordinaryRoot, Path.Combine(ordinaryRoot, "Remove"));
+                ordinary.Source.IsStale = true;
+                string newContent = Put(ordinary.Path, "added-before-review.txt", "new contents must appear in review");
+                var freshSelection = CleanupEngine.InspectSelection(ordinary.Entry, ordinary.Source, token);
+                check(freshSelection.CanChoose && freshSelection.Contents().Any(e => e.Path == newContent) && !freshSelection.Source.IsStale && ordinary.Source.IsStale,
+                    "A stale saved view gets a fresh independent preview of only the selected subtree");
+                check(!ordinary.Entry.Children.Any(e => e.Path == newContent) && !Object.ReferenceEquals(freshSelection.Entry, ordinary.Entry), "Preparing deletion does not mutate the displayed saved tree");
+                ordinary.Source.Cancelled = true;
+                check(!CleanupEngine.InspectSelection(ordinary.Entry, ordinary.Source, token).CanChoose, "Cancelled scans cannot authorize fresh selection cleanup");
+                ordinary.Source.Cancelled = false; ordinary.Entry.Issues = 1;
+                check(!CleanupEngine.InspectSelection(ordinary.Entry, ordinary.Source, token).CanChoose, "Incomplete selections remain blocked");
+                ordinary.Entry.Issues = 0;
+                check(!CleanupEngine.InspectSelection(ordinary.Source.Root, ordinary.Source, token).CanChoose, "Fresh preview cannot authorize deletion of the scan root");
+                var protectedSelection = scan.Entries.Single(e => e.Path == protectedScan);
+                check(!CleanupEngine.InspectSelection(protectedSelection, scan, token).CanChoose, "Fresh preview never bypasses protected AppData or scan storage");
+                File.AppendAllText(newContent, " edited after review");
+                check(Delete(freshSelection, roots, token).Any(s => s.StartsWith("✕")) && File.Exists(newContent), "Changes after the fresh preview still block deletion");
+                ordinary = CleanupEngine.InspectSelection(ordinary.Entry, ordinary.Source, token);
                 check(CleanupEngine.Collapse(new [] { ordinary, new CleanupItem { Path = ordinaryPath } }).Count == 1, "Parent and child selections collapse to one deletion");
                 deleted = Delete(ordinary, roots, token);
                 check(deleted.Count == 1 && deleted[0].StartsWith("✓") && !Directory.Exists(ordinary.Path), "Permanent folder removal works on generated Unicode fixtures: " + String.Join(" | ", deleted));
@@ -169,6 +186,9 @@ namespace Spacio
                         var apply = ReviewControl<Button>(dialog, "ReviewApply");
                         var details = ReviewControl<DataGrid>(dialog, "ReviewDetails");
                         if (permanent.IsChecked != true || apply.IsEnabled || acknowledge.IsChecked == true) throw new Exception("Permanent default must require explicit acknowledgement.");
+                        dialog.Height = Math.Min(600, dialog.Height); dialog.UpdateLayout();
+                        var footerPosition = apply.TranslatePoint(new Point(0, apply.ActualHeight), (UIElement)dialog.Content);
+                        if (footerPosition.Y > ((FrameworkElement)dialog.Content).ActualHeight + 1 || details.ActualHeight < 25) throw new Exception("Confirmation or preview is clipped on a short display.");
                         if (additional.Chosen || details.Items.Count != item.Contents().Count) throw new Exception("Review omitted contents or selected an additional cache.");
                         var bitmap = new System.Windows.Media.Imaging.RenderTargetBitmap((int)dialog.ActualWidth, (int)dialog.ActualHeight, 96, 96, PixelFormats.Pbgra32); bitmap.Render(dialog);
                         Startup.SaveBitmap(bitmap, prefix + "-cleanup-review-" + (persian ? "fa" : "en") + ".png");
@@ -222,8 +242,52 @@ namespace Spacio
             if (snapshot.Entries.Any(e => e.Path == target) || snapshot.IsStale || snapshot.Entries.Single(e => e.Path == sibling).Bytes != savedSibling) throw new Exception("Post-cleanup reconciliation widened to an unrelated sibling or retained the deleted file.");
             var reopened = new SnapshotCache(cache.DirectoryPath).Find(root, CancellationToken.None);
             if (reopened == null || reopened.Snapshot.IsStale || reopened.Snapshot.Entries.Any(e => e.Path == target)) throw new Exception("Cleanup result was not persisted for restart.");
+            await CheckSelectionReviewWorkflow(root);
             cleanupRoots = roots; cleanupItems.Clear(); Window.Width = width; Window.Height = height; L.Persian = language; ApplyLanguage();
-            File.WriteAllText(prefix + ".cleanup.ok.txt", "PASS: EN/FA cache and installed-app full pages; search; minimum-size layout; full preview contents; permanent default requires acknowledgement; additional/shared caches unchecked; Cancel preserves fixtures; returning preserves saved results; confirmed fixture deletion reconciles and persists only the affected subtree. No real user data deleted or applications uninstalled.");
+            File.WriteAllText(prefix + ".cleanup.ok.txt", "PASS: EN/FA cache and installed-app full pages; short-display confirmation; full preview contents; permanent acknowledgement; shared caches unchecked; Cancel preserves fixtures; actual selection-review workflow supersedes automatic refresh, revalidates stale selections and permanently deletes only a confirmed fixture; reconciliation and restart persistence. No real user data deleted or applications uninstalled.");
+        }
+        private async Task CheckSelectionReviewWorkflow(string root)
+        {
+            string target = CleanupTests.Put(root, @"Responsive cleanup\selected.txt");
+            await ScanAsync(root, true);
+            Navigate(snapshot.Entries.Single(e => e.Path == Path.GetDirectoryName(target))); await RefreshRowsAsync();
+            U<DataGrid>("FilesGrid").SelectedItem = U<DataGrid>("FilesGrid").Items.Cast<Row>().Single(r => r.Entry.Path == target);
+            snapshot.IsStale = stale = true; File.AppendAllText(target, " latest preview contents");
+            StartLiveUpdates(); liveTimer.Stop();
+            bool reviewed = false; Exception failure = null;
+            using (var held = File.Open(cache.FileFor(root), FileMode.Open, FileAccess.Read, FileShare.Read))
+            {
+                var automatic = RefreshSnapshotAsync(false); await Task.Delay(120);
+                if (!refreshingAutomatically || !U<Button>("RecycleButton").IsEnabled) throw new Exception("Automatic validation blocks deletion review.");
+                await ReviewSelectedCleanup(dialog => {
+                    try
+                    {
+                        var row = (CleanupItem)ReviewControl<DataGrid>(dialog, "ReviewItems").Items[0];
+                        if (refreshingAutomatically || !row.CanChoose || row.Entry.Bytes != new FileInfo(target).Length || row.Source.IsStale) throw new Exception("Deletion review did not cancel automatic refresh and validate its own target.");
+                        reviewed = true; ReviewControl<Button>(dialog, "ReviewCancel").RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                    }
+                    catch (Exception e) { failure = e; dialog.Close(); }
+                });
+                await automatic;
+            }
+            if (failure != null) throw failure;
+            if (!reviewed || !File.Exists(target)) throw new Exception("Cancelled selection review changed the fixture.");
+            bool reported = false;
+            var closeReport = new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromMilliseconds(50) };
+            closeReport.Tick += delegate {
+                foreach (var dialog in Application.Current.Windows.Cast<Window>().Where(w => w.Owner == Window && (w.Title == L.T("گزارش پاک‌سازی") || w.Title == L.T("خطا"))).ToArray())
+                { reported = dialog.Title == L.T("گزارش پاک‌سازی"); dialog.Close(); }
+            };
+            closeReport.Start();
+            try
+            {
+                await ReviewSelectedCleanup(dialog => {
+                    var acknowledge = ReviewControl<CheckBox>(dialog, "ReviewAcknowledge"); acknowledge.IsChecked = true; acknowledge.RaiseEvent(new RoutedEventArgs(CheckBox.ClickEvent));
+                    ReviewControl<Button>(dialog, "ReviewApply").RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                });
+            }
+            finally { closeReport.Stop(); StopLiveUpdates(); liveEnabled = false; }
+            if (!reported || File.Exists(target) || snapshot.Entries.Any(e => e.Path == target)) throw new Exception("Actual confirmed selection workflow failed to delete/reconcile a fixture from a stale saved view.");
         }
     }
 }

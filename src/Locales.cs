@@ -9,6 +9,7 @@ namespace Spacio
     {
         public static bool Persian = true;
         private static readonly Dictionary<string, string> English = new Dictionary<string, string> {
+            {"موارد انتخاب‌شده پیش از تأیید حذف دوباره بررسی می‌شوند", "Selected items will be checked again before you confirm deletion"},
             {"آمادهٔ بررسی", "Ready to review"},
             {"ابتدا برنامه را ببندید", "Close the app first"},
             {"اجرای حذف‌کنندهٔ برنامه", "Run app uninstaller"},

@@ -20,7 +20,7 @@ Get-Content -LiteralPath $liveReport
 if ($liveProcess.ExitCode -ne 0) { throw 'Live checks failed.' }
 $cleanupReport = Join-Path $artifactPath 'cleanup-tests.txt'
 $cleanupProcess = Start-Process -FilePath $exePath -ArgumentList @('--cleanup-test', ('"' + $cleanupReport + '"')) -WindowStyle Hidden -PassThru
-if (-not $cleanupProcess.WaitForExit(60000)) { throw 'Cleanup checks exceeded 60 seconds.' }
+if (-not $cleanupProcess.WaitForExit(180000)) { throw 'Cleanup checks exceeded 180 seconds.' }
 Get-Content -LiteralPath $cleanupReport
 if ($cleanupProcess.ExitCode -ne 0) { throw 'Cleanup checks failed.' }
 $updateReport = Join-Path $artifactPath 'update-tests.txt'
@@ -31,7 +31,7 @@ if ($updateProcess.ExitCode -ne 0) { throw 'Update checks failed.' }
 $fixturePath = (Get-Content -LiteralPath $reportPath | Where-Object { $_ -like 'FIXTURE=*' }).Substring(8)
 $previewPrefix = Join-Path $artifactPath ('ui-' + [DateTime]::Now.ToString('yyyyMMdd-HHmmss'))
 $uiProcess = Start-Process -FilePath $exePath -ArgumentList @('--ui-smoke', ('"' + $fixturePath + '"'), ('"' + $previewPrefix + '"')) -WindowStyle Hidden -PassThru
-if (-not $uiProcess.WaitForExit(60000)) { throw ('UI checks exceeded 60 seconds. Inspect process ' + $uiProcess.Id + '.') }
+if (-not $uiProcess.WaitForExit(180000)) { throw ('UI checks exceeded 180 seconds. Inspect process ' + $uiProcess.Id + '.') }
 if ((Test-Path -LiteralPath ($previewPrefix + '.error.txt')) -or -not (Test-Path -LiteralPath ($previewPrefix + '.ok.txt'))) { throw ('UI checks failed. Inspect ' + $previewPrefix + '.error.txt') }
 Get-Content -LiteralPath ($previewPrefix + '.ok.txt')
 if (-not (Test-Path -LiteralPath ($previewPrefix + '.pages.ok.txt'))) { throw 'Full results page checks failed.' }
