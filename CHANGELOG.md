@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.6.0
+
+- Allow full removal of explicitly selected application-data folders after a fresh preview and separate data-loss acknowledgement. Keep automatic cache discovery narrow and additional/shared/unverified candidates unchecked.
+- Preview recognized junctions and symbolic links as link objects, showing their destinations without enumerating them. Permanent removal unlinks only those objects; their target files remain untouched. Linked trees cannot silently fall back from recycling to permanent deletion.
+- Revalidate native file identities, reparse metadata and complete directory membership before removal. Pin ancestor/directory handles against replacement, delete through no-follow handles, support confirmed read-only entries, and report the failed path and partial progress. Preserve system/cloud data, profile containers, volume mounts and Spacio storage; never terminate owners or change ACLs.
+- Detect the supported default Hermes Agent installation from its launcher and project/uninstaller metadata even without Windows uninstall registration. Open its interactive vendor uninstaller with instructions to choose Full uninstall for program plus data. Recheck discovery before launch, keep remaining data/cache review separate, and use a working directory outside the application being removed.
+- Display complete blocking reasons and data-loss notices in Persian/English, add link details and keep confirmation controls visible on short displays. Preserve scan formats, saved results and existing update behavior.
+- Verify removal only with isolated fixtures: AppData, changed previews, locked/read-only files, junction destinations, replaced identities, cancellation, protected scan data, supported-uninstaller command construction and bilingual confirmation UI. No installed user application is uninstalled by these tests.
+
 ## 1.5.2
 
 - Recognize applications such as Notion whose uninstall registration omits InstallLocation, using agreeing registered uninstaller and executable-icon paths under a dedicated standard program directory. Preserve exact path boundaries and reject missing/mismatched/shared/linked fallback evidence.

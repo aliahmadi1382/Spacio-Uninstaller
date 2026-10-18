@@ -26,6 +26,7 @@ namespace Spacio
         internal Snapshot Source;
         internal CacheSpec Spec;
         internal bool Candidate;
+        internal ReviewedRemoval Removal;
         internal string Failure = "";
         public bool Chosen { get; set; }
         public string Path { get; internal set; }
@@ -38,6 +39,9 @@ namespace Spacio
         public string Count { get { return Entry == null ? "—" : Entry.FileCount.ToString("N0"); } }
         public string Status { get { return L.T(Failure.Length > 0 ? Failure : Entry == null ? "بررسی نشده" : Entry.Issues > 0 ? "ناقص" : "آمادهٔ بررسی"); } }
         public bool CanChoose { get { return Entry != null && Entry.Issues == 0 && Failure.Length == 0; } }
+        public string ReviewNotice { get { return Failure.Length > 0 ? Status : Removal == null ? Evidence :
+            L.T(Removal.AppData ? "این پوشه داده‌های برنامه است، نه فقط کش؛ تنظیمات، حساب‌ها و تاریخچهٔ داخل آن هم حذف می‌شوند" : "تمام فایل‌ها و زیرپوشه‌های نمایش‌داده‌شده حذف می‌شوند") +
+            (Removal.LinkCount > 0 ? "\n" + L.T("تعداد پیوندها؛ فقط خود پیوند حذف می‌شود و مقصد حفظ می‌شود") + ": " + Removal.LinkCount : ""); } }
         internal List<Entry> Contents()
         {
             var result = new List<Entry>(); if (Entry == null) return result;
@@ -143,7 +147,7 @@ namespace Spacio
 
     internal sealed class InstalledApp
     {
-        internal string Id, Command, Family, DisplayIcon;
+        internal string Id, Command, Family, DisplayIcon, Provider;
         internal bool Msi;
         public string Name { get; internal set; }
         public string Publisher { get; internal set; }
@@ -194,12 +198,31 @@ namespace Spacio
                         }
                     }
                     catch (System.Security.SecurityException) { } catch (UnauthorizedAccessException) { } catch (IOException) { }
+            var hermes = DetectHermes(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "hermes"));
+            if (hermes != null && !result.Any(a => !String.IsNullOrEmpty(a.Location) && Paths.Equal(a.Location, hermes.Location))) result.Add(hermes);
             return result.GroupBy(a => a.Name + "\n" + a.Version + "\n" + a.Command, StringComparer.OrdinalIgnoreCase).Select(g => g.First()).OrderBy(a => a.Name).ToList();
+        }
+        internal static InstalledApp DetectHermes(string root)
+        {
+            try
+            {
+                root = Paths.Normalize(root); if (ReviewedRemoval.ProtectedReason(root) != null) return null;
+                string executable = Path.Combine(root, "bin", "hermes.exe"), project = Path.Combine(root, "hermes-agent", "pyproject.toml"),
+                    uninstaller = Path.Combine(root, "hermes-agent", "hermes_cli", "uninstall.py"), parser = Path.Combine(root, "hermes-agent", "hermes_cli", "subcommands", "uninstall.py");
+                foreach (var file in new [] { executable, project, uninstaller, parser }) { if (!File.Exists(file)) return null; Paths.CheckAncestors(file); }
+                if (new FileInfo(project).Length > 1024 * 1024 || new FileInfo(parser).Length > 128 * 1024) return null;
+                string metadata = File.ReadAllText(project), commands = File.ReadAllText(parser);
+                if (!System.Text.RegularExpressions.Regex.IsMatch(metadata, @"(?m)^name\s*=\s*[""']hermes-agent[""']\s*$") || !metadata.Contains("hermes_cli.main:main") || !commands.Contains("--dry-run") || !commands.Contains("--full")) return null;
+                return new InstalledApp { Id = "supported/hermes/" + root, Name = "Hermes Agent", Publisher = "Nous Research", Version = "", Location = root,
+                    Command = "\"" + executable + "\" uninstall", Family = "", Provider = "hermes" };
+            }
+            catch (IOException) { return null; } catch (UnauthorizedAccessException) { return null; } catch (ArgumentException) { return null; }
         }
         internal static InstalledApp Owner(string path, IEnumerable<InstalledApp> apps)
         {
             return apps.Where(a => {
-                try { return !String.IsNullOrWhiteSpace(a.Location) && System.IO.Path.IsPathRooted(a.Location) && Paths.Normalize(a.Location).Length > 3 && Paths.Within(path, a.Location); }
+                try { return !String.IsNullOrWhiteSpace(a.Location) && System.IO.Path.IsPathRooted(a.Location) && Paths.Normalize(a.Location).Length > 3 && Paths.Within(path, a.Location) &&
+                    (a.Provider != "hermes" || Paths.Equal(path, a.Location) || Paths.Within(path, Path.Combine(a.Location, "hermes-agent")) || Paths.Within(path, Path.Combine(a.Location, "bin"))); }
                 catch (ArgumentException) { return false; } catch (NotSupportedException) { return false; }
             }).OrderByDescending(a => a.Location.Length).FirstOrDefault();
         }
@@ -258,7 +281,14 @@ namespace Spacio
                 if (new [] { "cmd", "powershell", "pwsh", "wscript", "cscript", "mshta", "rundll32", "regsvr32" }.Contains(name, StringComparer.OrdinalIgnoreCase))
                     throw new IOException(L.T("فرمان حذف قابل تأیید نیست؛ از تنظیمات ویندوز استفاده کنید"));
             }
-            return new ProcessStartInfo(executable, arguments) { UseShellExecute = true, WorkingDirectory = System.IO.Path.GetDirectoryName(executable) };
+            Paths.CheckAncestors(executable);
+            var start = new ProcessStartInfo(executable, arguments) { UseShellExecute = true, WorkingDirectory = Environment.SystemDirectory };
+            if (app.Provider == "hermes")
+            {
+                start.UseShellExecute = false; start.EnvironmentVariables["HERMES_HOME"] = app.Location;
+                start.EnvironmentVariables.Remove("HERMES_PROFILE");
+            }
+            return start;
         }
     }
 
@@ -269,19 +299,15 @@ namespace Spacio
         {
             var item = new CleanupItem { Path = selected.Path, Owner = selected.Name, Entry = selected, Source = saved,
                 Evidence = "موردی که در فهرست فایل‌ها انتخاب کردید" };
-            var eligibility = saved == null ? null : new Snapshot { Root = saved.Root, Cancelled = saved.Cancelled };
-            item.Failure = Safety.BlockReason(selected, eligibility) ?? "";
-            if (item.Failure.Length != 0) return item;
+            if (saved == null || saved.Cancelled) { item.Failure = "ابتدا اسکن کامل انجام دهید"; return item; }
+            var ancestor = selected; while (ancestor.Parent != null) ancestor = ancestor.Parent;
+            if (!Object.ReferenceEquals(ancestor, saved.Root) || !Paths.Within(selected.Path, saved.Root.Path)) { item.Failure = "مورد به این اسکن تعلق ندارد"; return item; }
+            if (Paths.Equal(selected.Path, saved.Root.Path)) { item.Failure = "ریشهٔ اسکن قابل حذف نیست"; return item; }
             try
             {
-                token.ThrowIfCancellationRequested(); Paths.RequireLocal(selected.Path); Paths.CheckAncestors(selected.Path);
-                Entry fresh; var entries = new List<Entry>();
-                if (selected.IsDirectory)
-                {
-                    var scan = new Scanner().Scan(selected.Path, token, null); token.ThrowIfCancellationRequested();
-                    fresh = scan.Root; entries.AddRange(scan.Entries);
-                }
-                else { fresh = Scanner.ReadEntry(new FileInfo(selected.Path), null); entries.Add(fresh); }
+                token.ThrowIfCancellationRequested();
+                var plan = ReviewedRemoval.Prepare(selected.Path, token); var fresh = plan.Root;
+                var entries = plan.Nodes.Select(n => n.Entry).ToList();
                 // Copy ancestor identities for safety checks, without scanning siblings
                 // or changing any entry in the displayed or persisted snapshot.
                 var ancestors = new Stack<Entry>();
@@ -295,7 +321,7 @@ namespace Spacio
                 }
                 fresh.Parent = current; current.Children.Add(fresh);
                 item.Entry = fresh; item.Source = new Snapshot { Root = root, Entries = entries };
-                item.Failure = Safety.BlockReason(fresh, item.Source) ?? ""; item.Chosen = item.CanChoose;
+                item.Removal = plan; item.Chosen = item.CanChoose;
             }
             catch (OperationCanceledException) { throw; }
             catch (Exception e) { item.Failure = e.Message; item.Chosen = false; }
@@ -320,6 +346,13 @@ namespace Spacio
                         token.ThrowIfCancellationRequested();
                         try
                         {
+                            if (item.Removal != null)
+                            {
+                                if (!item.CanChoose || !Paths.Equal(item.Path, item.Removal.Root.Path)) throw new IOException("Invalid reviewed removal plan.");
+                                if (permanent) item.Removal.DeletePermanent(token);
+                                else { item.Removal.VerifyForRecycle(token); Recycler.DeleteReviewedPath(item.Path, owner, false); }
+                                reports.Add("✓ " + item.Path); continue;
+                            }
                             string reason = item.Spec == null ? Safety.BlockReason(item.Entry, item.Source) : CacheCatalog.BlockCache(item, roots ?? new CacheRoots());
                             if (reason != null) throw new IOException(L.T(reason));
                             Paths.RequireLocal(Paths.Normalize(item.Path)); Paths.CheckAncestors(item.Path);

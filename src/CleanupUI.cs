@@ -24,6 +24,7 @@ namespace Spacio
         public string Size { get; set; }
         public string Kind { get; set; }
         public string Date { get; set; }
+        public string Status { get; set; }
     }
     public sealed partial class Controller
     {
@@ -197,6 +198,12 @@ namespace Spacio
             SetStatus(L.T("در حال بررسی کش‌ها؛ فایل‌ها تغییر نمی‌کنند"));
             try
             {
+                if (app != null && app.Provider == "hermes")
+                {
+                    var scan = await Task.Run(() => new Scanner().Scan(app.Location, token, null), token); token.ThrowIfCancellationRequested();
+                    selected = new List<CleanupItem> { new CleanupItem { Path = app.Location, Owner = app.Name, Entry = scan.Root, Source = scan,
+                        Evidence = "فایل‌ها و داده‌های برنامه؛ حذف با حذف‌کنندهٔ رسمی", Failure = "نرم‌افزار نصب‌شده؛ حذف‌کنندهٔ برنامه را اجرا کنید" } };
+                }
                 var related = await Task.Run(() => CacheCatalog.Discover(cleanupRoots, token).Where(s => families.Contains(s.Family)).Select(s => CacheCatalog.Inspect(s, token, cleanupRoots)).ToList(), token);
                 foreach (var row in related) { row.Chosen = false; selected.Add(row); }
                 SetBusy(false, false);
@@ -214,7 +221,11 @@ namespace Spacio
                 var operation = new CancellationTokenSource(); cleanupCancel = operation; SetBusy(true, false);
                 try
                 {
-                    selected = await Task.Run(() => selected.Select(i => i.Spec == null ? i : CacheCatalog.Inspect(i.Spec, operation.Token, cleanupRoots)).ToList(), operation.Token);
+                    selected = await Task.Run(() => selected.Select(i => {
+                        if (i.Spec != null) return CacheCatalog.Inspect(i.Spec, operation.Token, cleanupRoots);
+                        if (i.Entry == null || app != null) return i;
+                        var fresh = CleanupEngine.InspectSelection(i.Entry, i.Source, operation.Token); fresh.Candidate = i.Candidate; return fresh;
+                    }).ToList(), operation.Token);
                     operation.Token.ThrowIfCancellationRequested();
                     foreach (var row in selected) row.Chosen = row.CanChoose && !row.Candidate && !(row.Spec != null && row.Spec.Shared);
                 }
@@ -304,12 +315,13 @@ namespace Spacio
                 Background = B("#10181C"), Foreground = B("#E4EFEB"), FontFamily = Window.FontFamily, FontSize = 12, FlowDirection = Window.FlowDirection,
                 WindowStartupLocation = WindowStartupLocation.CenterOwner, Resources = Window.Resources };
             var layout = new Grid { Margin = new Thickness(22) }; dialog.Content = layout;
-            foreach (var rowHeight in new [] { GridLength.Auto, new GridLength(1, GridUnitType.Star), new GridLength(28), new GridLength(1, GridUnitType.Star), GridLength.Auto }) layout.RowDefinitions.Add(new RowDefinition { Height = rowHeight });
+            foreach (var rowHeight in new [] { GridLength.Auto, new GridLength(1, GridUnitType.Star), GridLength.Auto, new GridLength(1, GridUnitType.Star), GridLength.Auto }) layout.RowDefinitions.Add(new RowDefinition { Height = rowHeight });
             var heading = new StackPanel { Margin = new Thickness(0, 0, 0, 12) }; layout.Children.Add(heading);
             heading.Children.Add(new TextBlock { Text = app == null ? L.T("قبل از حذف، مسیرها و محتوای دقیق را بررسی کنید") : app.Name + "  ·  " + app.Version, FontSize = 20, FontWeight = FontWeights.SemiBold });
             heading.Children.Add(new TextBlock { Text = L.T("کش‌های اضافی و موارد مشترک یا احتمالی خودکار انتخاب نمی‌شوند. انتخاب ردیف، همهٔ فایل‌های آن را در جدول پایین نشان می‌دهد."), Foreground = B("#9EBBB0"), TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 9, 0, 0) });
             heading.Children.Add(new TextBlock { Text = L.T(app == null ? "برای هر فایل، کش اختصاصی قابل تشخیص نیست؛ فقط ارتباط‌های شناخته‌شده نمایش داده می‌شوند." : "حذف‌کنندهٔ برنامه جدا اجرا می‌شود. کش‌ها فقط با انتخاب و تأیید پاک‌سازی حذف می‌شوند."), TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 7, 0, 0), Foreground = B("#B8ACA0") });
             if (app != null) heading.Children.Add(new TextBox { Text = app.Command, IsReadOnly = true, FlowDirection = FlowDirection.LeftToRight, FontSize = 11, Height = 32, Margin = new Thickness(0, 10, 0, 0), Padding = new Thickness(6, 5, 6, 5), ToolTip = app.Command, HorizontalScrollBarVisibility = ScrollBarVisibility.Auto });
+            if (app != null && app.Provider == "hermes") heading.Children.Add(new TextBlock { Text = L.T("حذف‌کنندهٔ رسمی Hermes باز می‌شود؛ برای حذف برنامه و داده‌ها، Full uninstall را انتخاب و تأیید کنید. سرویس‌ها، ورودی PATH، تنظیمات و تاریخچه ممکن است حذف شوند. این کار فقط حذف کش نیست."), TextWrapping = TextWrapping.Wrap, Foreground = B("#EDB2A4"), Margin = new Thickness(0, 8, 0, 0) });
             var grid = CleanupTable(); Grid.SetRow(grid, 1); layout.Children.Add(grid);
             grid.Name = "ReviewItems";
             var checkTemplate = new DataTemplate(); var check = new FrameworkElementFactory(typeof(CheckBox));
@@ -319,30 +331,34 @@ namespace Spacio
             grid.Columns.Add(CleanupColumn("برنامه و مسیر کش", "Path", new DataGridLength(1, DataGridLengthUnitType.Star)));
             grid.Columns.Add(CleanupColumn("اندازه", "Size", 95)); grid.Columns.Add(CleanupColumn("نوع", "Kind", 125)); grid.Columns.Add(CleanupColumn("وضعیت", "Status", 185));
             grid.ItemsSource = items;
-            var detailsLabel = new TextBlock { Text = L.T("محتوای دقیق ردیف انتخاب‌شده"), Foreground = B("#8DD9BC") }; Grid.SetRow(detailsLabel, 2); layout.Children.Add(detailsLabel);
+            var information = new StackPanel { Margin = new Thickness(0, 7, 0, 7) }; Grid.SetRow(information, 2); layout.Children.Add(information);
+            var notice = new TextBox { Name = "ReviewNotice", IsReadOnly = true, TextWrapping = TextWrapping.Wrap, MaxHeight = 76, VerticalScrollBarVisibility = ScrollBarVisibility.Auto, BorderThickness = new Thickness(0), Background = B("#10181C"), Foreground = B("#EDB2A4"), Padding = new Thickness(0, 2, 0, 5) }; information.Children.Add(notice);
+            var detailsLabel = new TextBlock { Text = L.T("محتوای دقیق ردیف انتخاب‌شده"), Foreground = B("#8DD9BC") }; information.Children.Add(detailsLabel);
             var details = CleanupTable(); details.IsReadOnly = true; Grid.SetRow(details, 3); layout.Children.Add(details);
             details.Name = "ReviewDetails";
             details.Columns.Add(CleanupColumn("مسیر کامل", "Path", new DataGridLength(1, DataGridLengthUnitType.Star)));
             details.Columns.Add(CleanupColumn("اندازه", "Size", 110)); details.Columns.Add(CleanupColumn("نوع", "Kind", 120));
             details.Columns.Add(CleanupColumn("آخرین تغییر محتوا", "Date", 125));
+            details.Columns.Add(CleanupColumn("وضعیت و پیوند", "Status", 210));
             int detailsVersion = 0;
             grid.SelectionChanged += async delegate {
                 var item = grid.SelectedItem as CleanupItem;
-                int version = ++detailsVersion; details.ItemsSource = null;
-                var rows = item == null ? null : await Task.Run(() => item.Contents().Select(e => new CleanupDetail { Path = e.Path, Size = Formats.Size(e.Bytes), Kind = L.T(e.IsDirectory ? "پوشه" : "فایل"), Date = Formats.Date(e.LatestUtc) }).ToList());
+                int version = ++detailsVersion; details.ItemsSource = null; notice.Text = item == null ? "" : item.ReviewNotice;
+                var rows = item == null ? null : await Task.Run(() => item.Contents().Select(e => new CleanupDetail { Path = e.Path, Size = Formats.Size(e.Bytes), Kind = L.T((e.Attributes & FileAttributes.ReparsePoint) != 0 ? "پیوند" : e.IsDirectory ? "پوشه" : "فایل"), Date = Formats.Date(e.LatestUtc), Status = L.T(e.Note) }).ToList());
                 if (version != detailsVersion) return; details.ItemsSource = rows;
                 detailsLabel.Text = item == null ? L.T("محتوای دقیق ردیف انتخاب‌شده") : item.Owner + " · " + item.Evidence;
             };
             if (items.Count > 0) grid.SelectedIndex = 0;
             var footer = new Grid(); Grid.SetRow(footer, 4); layout.Children.Add(footer);
-            footer.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto }); footer.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto }); footer.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+            footer.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto }); footer.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto }); footer.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto }); footer.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
             var permanent = new CheckBox { Content = L.T("حذف دائمی به‌جای سطل بازیافت"), IsChecked = true, Margin = new Thickness(0, 10, 0, 6), Foreground = B("#EDB2A4") }; footer.Children.Add(permanent);
             permanent.Name = "ReviewPermanent";
             permanent.Visibility = app == null ? Visibility.Visible : Visibility.Collapsed;
             var acknowledge = new CheckBox { Content = L.T("می‌دانم موارد حذف دائمی از سطل بازیافت قابل بازگردانی نیستند"), Foreground = B("#EDB2A4"), Visibility = Visibility.Collapsed }; Grid.SetRow(acknowledge, 1); footer.Children.Add(acknowledge);
             acknowledge.Name = "ReviewAcknowledge";
+            var dataAcknowledge = new CheckBox { Name = "ReviewDataAcknowledge", Content = L.T("حذف همهٔ داده‌های انتخابی و خودِ پیوندها را تأیید می‌کنم؛ مقصد پیوندها حذف نمی‌شود"), Foreground = B("#EDB2A4"), Visibility = Visibility.Collapsed, Margin = new Thickness(0, 6, 0, 0) }; Grid.SetRow(dataAcknowledge, 2); footer.Children.Add(dataAcknowledge);
             var summary = new TextBlock { HorizontalAlignment = HorizontalAlignment.Right, Margin = new Thickness(8, 10, 0, 0), Foreground = B("#9EBBB0"), Visibility = app == null ? Visibility.Visible : Visibility.Collapsed }; footer.Children.Add(summary);
-            var buttons = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right, Margin = new Thickness(0, 12, 0, 0) }; Grid.SetRow(buttons, 2); footer.Children.Add(buttons);
+            var buttons = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right, Margin = new Thickness(0, 12, 0, 0) }; Grid.SetRow(buttons, 3); footer.Children.Add(buttons);
             var cancel = ReviewButton("لغو"); cancel.Click += delegate { dialog.DialogResult = false; }; buttons.Children.Add(cancel);
             cancel.Name = "ReviewCancel";
             if (app != null)
@@ -357,7 +373,12 @@ namespace Spacio
             var apply = ReviewButton("تأیید انتقال به سطل بازیافت"); apply.Background = B("#694139"); buttons.Children.Add(apply);
             apply.Name = "ReviewApply";
             apply.Visibility = app == null ? Visibility.Visible : Visibility.Collapsed;
-            Action update = () => { var chosen = CleanupEngine.Collapse(items.Where(i => i.Chosen && i.CanChoose)); summary.Text = chosen.Count + " " + L.T("مورد") + " · " + Formats.Size(chosen.Sum(i => i.Entry.Bytes)); acknowledge.Visibility = app == null && permanent.IsChecked == true ? Visibility.Visible : Visibility.Collapsed; apply.Content = L.T(permanent.IsChecked == true ? "تأیید حذف دائمی" : "تأیید انتقال به سطل بازیافت"); apply.IsEnabled = app == null && chosen.Count > 0 && (permanent.IsChecked != true || acknowledge.IsChecked == true); };
+            Action update = () => { var chosen = CleanupEngine.Collapse(items.Where(i => i.Chosen && i.CanChoose)); bool data = chosen.Any(i => i.Removal != null && (i.Removal.AppData || i.Removal.LinkCount > 0));
+                dataAcknowledge.Visibility = app == null && data ? Visibility.Visible : Visibility.Collapsed;
+                bool recycleLinks = permanent.IsChecked != true && chosen.Any(i => i.Removal != null && i.Removal.LinkCount > 0);
+                apply.ToolTip = recycleLinks ? L.T("پوشهٔ دارای پیوند به سطل بازیافت منتقل نمی‌شود؛ حذف دائمی فقط با تأیید شما انجام می‌شود") : null;
+                summary.Text = chosen.Count + " " + L.T("مورد") + " · " + Formats.Size(chosen.Sum(i => i.Entry.Bytes)); acknowledge.Visibility = app == null && permanent.IsChecked == true ? Visibility.Visible : Visibility.Collapsed; apply.Content = L.T(permanent.IsChecked == true ? "تأیید حذف دائمی" : "تأیید انتقال به سطل بازیافت"); apply.IsEnabled = app == null && chosen.Count > 0 && !recycleLinks && (!data || dataAcknowledge.IsChecked == true) && (permanent.IsChecked != true || acknowledge.IsChecked == true); };
+            dataAcknowledge.Click += delegate { update(); };
             permanent.Click += delegate { acknowledge.IsChecked = false; update(); }; acknowledge.Click += delegate { update(); };
             grid.AddHandler(CheckBox.CheckedEvent, new RoutedEventHandler((s, e) => dialog.Dispatcher.BeginInvoke(update)));
             grid.AddHandler(CheckBox.UncheckedEvent, new RoutedEventHandler((s, e) => dialog.Dispatcher.BeginInvoke(update)));

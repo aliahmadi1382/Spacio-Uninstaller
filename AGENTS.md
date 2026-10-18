@@ -6,10 +6,18 @@ The user selected permanent deletion as the default, after a detailed preview
 and explicit confirmation every time. Keep recycling as a separate selectable
 mode with no permanent fallback. Additional/shared/unverified cache candidates
 must not be preselected. Only exact supported cache directories may use the
-narrow AppData exception; never treat a folder name alone as proof. Preserve
-Spacio scans/preferences and reject incomplete, linked, cloud and system targets.
-Use registered uninstallers for applications and require separate review of
-remaining caches. Do not claim an exhaustive per-file cache association.
+narrow AppData exception in cache discovery; never treat a folder name alone as
+proof. The user's subsequent request also permits full removal of explicitly
+selected application data after a fresh detailed preview and separate data-loss
+acknowledgement. For this explicit-data workflow, recognized symlinks/junctions
+may be unlinked without traversing or deleting their targets; show their targets
+in the preview. Reject unknown reparse points, volume mounts, incomplete access,
+cloud/system targets, drive/profile containers and Spacio scans/preferences.
+Revalidate file identities and directory contents before removal. Never force
+processes closed or change permissions to bypass a failure.
+Use registered uninstallers or explicitly supported vendor uninstallers for
+applications, and require separate review of remaining caches/data. Do not claim
+an exhaustive per-file cache association or universal leftover detection.
 Verify destructive behavior using generated isolated fixtures only.
 
 ## Version control workflow

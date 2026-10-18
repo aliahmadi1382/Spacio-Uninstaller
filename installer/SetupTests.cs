@@ -127,7 +127,9 @@ namespace SpacioSetup
                 SetupEngine.Install(context, false);
                 check(!File.Exists(context.DesktopLink) && File.Exists(context.MenuLink), "Desktop shortcut can be declined while Start Menu remains available");
                 SetupEngine.WriteShortcut(context.DesktopLink, personal);
+                AwaitFixtureFiles(context);
                 reject(() => SetupEngine.Install(context, true), "An unrelated existing desktop shortcut is not overwritten");
+                AwaitFixtureFiles(context);
                 SetupEngine.Uninstall(context);
                 check(File.Exists(context.DesktopLink) && SetupEngine.Same(SetupEngine.ShortcutTarget(context.DesktopLink), personal), "Uninstall preserves a shortcut repointed to an unrelated file");
                 check(savedData.All(p => File.Exists(p.Key) && SetupEngine.Hash(p.Key) == p.Value), "Isolated saved scans and preferences survive uninstall, reinstall and failure recovery byte-for-byte");

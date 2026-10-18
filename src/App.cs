@@ -467,9 +467,10 @@ namespace Spacio
         {
             var selected = Safety.CollapseSelection(Selected().Select(r => r.Entry));
             U<Button>("RevealButton").IsEnabled = selected.Count == 1;
-            string reason = snapshot == null ? "ابتدا اسکن کامل انجام دهید" : selected.Select(e => Safety.BlockReason(e, snapshot)).FirstOrDefault(x => x != null);
+            string reason = snapshot == null || snapshot.Cancelled ? "ابتدا اسکن کامل انجام دهید" : selected.Select(e =>
+                Paths.Equal(e.Path, snapshot.Root.Path) ? "ریشهٔ اسکن قابل حذف نیست" : ReviewedRemoval.ProtectedReason(e.Path)).FirstOrDefault(x => x != null);
             U<Button>("RecycleButton").IsEnabled = (!busy || refreshingAutomatically) && !reviewingCleanup && cleanupCancel == null && snapshot != null && !snapshot.Cancelled && selected.Count > 0;
-            U<Button>("RecycleButton").ToolTip = L.T(stale || refreshingAutomatically ? "موارد انتخاب‌شده پیش از تأیید حذف دوباره بررسی می‌شوند" : reason);
+            U<Button>("RecycleButton").ToolTip = L.T(reason ?? "موارد انتخاب‌شده پیش از تأیید حذف دوباره بررسی می‌شوند");
             U<TextBlock>("SelectionInfo").Text = selected.Count == 0 ? L.T("انتخابی ندارید") : selected.Count.ToString("N0") + " " + L.T("انتخاب‌شده") + "  ·  " + Formats.Size(selected.Sum(x => x.Bytes)) + (reason == null ? "" : "  ·  " + L.T(reason));
         }
         private int mapVersion;

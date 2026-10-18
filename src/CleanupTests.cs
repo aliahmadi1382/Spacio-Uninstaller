@@ -105,7 +105,7 @@ namespace Spacio
                 ordinary.Source.Cancelled = true;
                 check(!CleanupEngine.InspectSelection(ordinary.Entry, ordinary.Source, token).CanChoose, "Cancelled scans cannot authorize fresh selection cleanup");
                 ordinary.Source.Cancelled = false; ordinary.Entry.Issues = 1;
-                check(!CleanupEngine.InspectSelection(ordinary.Entry, ordinary.Source, token).CanChoose, "Incomplete selections remain blocked");
+                check(CleanupEngine.InspectSelection(ordinary.Entry, ordinary.Source, token).CanChoose, "A fresh complete preview can replace obsolete issue flags without changing the saved scan");
                 ordinary.Entry.Issues = 0;
                 check(!CleanupEngine.InspectSelection(ordinary.Source.Root, ordinary.Source, token).CanChoose, "Fresh preview cannot authorize deletion of the scan root");
                 var protectedSelection = scan.Entries.Single(e => e.Path == protectedScan);
@@ -159,6 +159,7 @@ namespace Spacio
                 check(InstalledApps.ResolveLocation(notion, new [] { programs }) == "", "Missing uninstallers do not produce a false association");
                 check(InstalledApps.Family("My file named Chrome.txt") == "" && InstalledApps.Family("Adobe Acrobat") == "" && InstalledApps.Family("Adobe Premiere Pro 2026") == "adobe-media", "Unrelated filenames and Acrobat are not assigned Adobe media/Chrome caches");
                 check(File.ReadAllText(canary) == "keep outside" && File.ReadAllText(protectedScan) == "unchanged scan bytes", "All deletion tests preserve outside canaries and saved scans");
+                ReviewedRemovalTests.Run(area, check);
                 lines.Add("FIXTURE=" + area); File.WriteAllLines(report, lines); return 0;
             }
             catch (Exception e) { lines.Add(e.ToString()); lines.Add("FIXTURE=" + area); File.WriteAllLines(report, lines); return 1; }
@@ -223,6 +224,35 @@ namespace Spacio
                 if (!persian && (item.Evidence.Any(c => c >= '\u0600' && c <= '\u06ff') || U<TextBlock>("CleanupStatus").Text.Any(c => c >= '\u0600' && c <= '\u06ff'))) throw new Exception("Cached labels did not change to English.");
             }
             await OpenCleanupPage(true);
+            string appDataFixture = CleanupTests.Put(cleanupRoots.Local, @"ExplicitData\settings.json", "generated user data");
+            foreach (bool persian in new [] { false, true })
+            {
+                L.Persian = persian; ApplyLanguage();
+                var dataPlan = ReviewedRemoval.Prepare(Path.GetDirectoryName(appDataFixture), CancellationToken.None);
+                var dataItem = new CleanupItem { Path = dataPlan.Root.Path, Entry = dataPlan.Root, Removal = dataPlan, Chosen = true, Owner = "Generated app data", Evidence = "Generated fixture" };
+                Exception dataFailure = null;
+                var dataChoice = ShowCleanupReview(new List<CleanupItem> { dataItem }, null, async dialog => {
+                    try
+                    {
+                        dialog.ShowInTaskbar = false; await Task.Delay(150); dialog.Height = Math.Min(620, dialog.Height); dialog.UpdateLayout();
+                        var apply = ReviewControl<Button>(dialog, "ReviewApply"); var ack = ReviewControl<CheckBox>(dialog, "ReviewAcknowledge");
+                        var dataAck = ReviewControl<CheckBox>(dialog, "ReviewDataAcknowledge"); var notice = ReviewControl<TextBox>(dialog, "ReviewNotice");
+                        if (!dataAck.IsVisible || dataAck.IsChecked == true || !notice.Text.Contains(L.T("این پوشه داده‌های برنامه است، نه فقط کش؛ تنظیمات، حساب‌ها و تاریخچهٔ داخل آن هم حذف می‌شوند"))) throw new Exception("App data lacks a visible scope warning and explicit acknowledgement.");
+                        ack.IsChecked = true; ack.RaiseEvent(new RoutedEventArgs(CheckBox.ClickEvent));
+                        if (apply.IsEnabled) throw new Exception("Permanent acknowledgement alone authorized app-data removal.");
+                        dataAck.IsChecked = true; dataAck.RaiseEvent(new RoutedEventArgs(CheckBox.ClickEvent));
+                        if (!apply.IsEnabled) throw new Exception("Explicit data acknowledgement did not enable reviewed removal.");
+                        var position = apply.TranslatePoint(new Point(0, apply.ActualHeight), (UIElement)dialog.Content);
+                        if (position.Y > ((FrameworkElement)dialog.Content).ActualHeight + 1) throw new Exception("Data confirmation is clipped on a short screen.");
+                        var bitmap = new System.Windows.Media.Imaging.RenderTargetBitmap((int)dialog.ActualWidth, (int)dialog.ActualHeight, 96, 96, PixelFormats.Pbgra32); bitmap.Render(dialog);
+                        Startup.SaveBitmap(bitmap, prefix + "-data-review-" + (persian ? "fa" : "en") + ".png");
+                        ReviewControl<Button>(dialog, "ReviewCancel").RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                    }
+                    catch (Exception e) { dataFailure = e; dialog.Close(); }
+                });
+                if (dataFailure != null) throw dataFailure;
+                if (dataChoice.Confirmed || !File.Exists(appDataFixture)) throw new Exception("Cancelled data review removed a fixture.");
+            }
             installedApps = new List<InstalledApp> { new InstalledApp { Name = "Spacio test application", Version = "1.0", Publisher = "Fixture publisher", Location = area, Family = "", Command = "fixture only" } };
             foreach (bool persian in new [] { false, true })
             {
@@ -285,10 +315,11 @@ namespace Spacio
         }
         private async Task CheckSelectionReviewWorkflow(string root)
         {
-            string target = CleanupTests.Put(root, @"Responsive cleanup\selected.txt");
+            string target = CleanupTests.Put(root, @"AppData\Local\WorkflowApp\selected.txt");
             await ScanAsync(root, true);
             Navigate(snapshot.Entries.Single(e => e.Path == Path.GetDirectoryName(target))); await RefreshRowsAsync();
             U<DataGrid>("FilesGrid").SelectedItem = U<DataGrid>("FilesGrid").Items.Cast<Row>().Single(r => r.Entry.Path == target);
+            if (!Object.Equals(U<Button>("RecycleButton").ToolTip, L.T("موارد انتخاب‌شده پیش از تأیید حذف دوباره بررسی می‌شوند"))) throw new Exception("Selected app data still displays an obsolete protected-path warning.");
             snapshot.IsStale = stale = true; File.AppendAllText(target, " latest preview contents");
             StartLiveUpdates(); liveTimer.Stop();
             bool reviewed = false; Exception failure = null;
@@ -320,6 +351,9 @@ namespace Spacio
             {
                 await ReviewSelectedCleanup(dialog => {
                     var acknowledge = ReviewControl<CheckBox>(dialog, "ReviewAcknowledge"); acknowledge.IsChecked = true; acknowledge.RaiseEvent(new RoutedEventArgs(CheckBox.ClickEvent));
+                    var dataAcknowledge = ReviewControl<CheckBox>(dialog, "ReviewDataAcknowledge");
+                    if (!dataAcknowledge.IsVisible || ReviewControl<Button>(dialog, "ReviewApply").IsEnabled) throw new Exception("App-data workflow skipped explicit data-loss acknowledgement.");
+                    dataAcknowledge.IsChecked = true; dataAcknowledge.RaiseEvent(new RoutedEventArgs(CheckBox.ClickEvent));
                     ReviewControl<Button>(dialog, "ReviewApply").RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
                 });
             }
