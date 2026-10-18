@@ -20,6 +20,17 @@ applications, and require separate review of remaining caches/data. Do not claim
 an exhaustive per-file cache association or universal leftover detection.
 Verify destructive behavior using generated isolated fixtures only.
 
+After an app uninstall launched from Spacio, capture its identity and candidate
+paths before registration disappears. Automatically follow a successful process
+exit with stable registration absence; an early bootstrapper exit alone is not
+completion. Keep manual fallback clearly labelled. Show only scoped leftover
+paths, sizes and association evidence, with every leftover unchecked. Recheck
+registration, running ownership and file identities before confirmed removal.
+Only a dedicated captured installation directory may use the narrow Program
+Files exception after removal and overlap checks; shared Windows components,
+drive/profile containers and Spacio storage remain protected. Never infer that
+an exact name match is confirmed ownership or an exhaustive cache association.
+
 ## Version control workflow
 
 The user has explicitly authorized committing and pushing completed changes to

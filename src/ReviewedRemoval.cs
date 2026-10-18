@@ -24,8 +24,9 @@ namespace Spacio
         internal Entry Root { get { return Nodes[0].Entry; } }
         internal int LinkCount { get { return Nodes.Count(n => n.Link); } }
         internal bool AppData;
+        private string installBoundary;
 
-        internal static string ProtectedReason(string path)
+        internal static string ProtectedReason(string path, string installation = null)
         {
             path = Paths.Normalize(path);
             string disk = Path.GetPathRoot(path);
@@ -34,6 +35,12 @@ namespace Spacio
             var roaming = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
             var common = Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData);
             var user = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+            var programRoots = new [] { Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles), Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86) };
+            bool reviewedInstallation = !String.IsNullOrWhiteSpace(installation) && Paths.Within(path, installation) &&
+                programRoots.Any(p => !String.IsNullOrEmpty(p) && !Paths.Equal(installation, p) && Paths.Within(installation, p));
+            foreach (string programRoot in programRoots.Where(p => !String.IsNullOrEmpty(p)))
+                foreach (string reserved in new [] { "Common Files", "WindowsApps", "Windows Defender", "Windows NT", "Microsoft.NET" })
+                    if (Paths.Within(path, Path.Combine(programRoot, reserved))) return "مسیر محافظت‌شدهٔ سیستم";
             if (Paths.Equal(Path.GetDirectoryName(path), Path.Combine(disk, "Users")) || path.EndsWith(@"\AppData", StringComparison.OrdinalIgnoreCase) ||
                 path.EndsWith(@"\AppData\Local", StringComparison.OrdinalIgnoreCase) || path.EndsWith(@"\AppData\Roaming", StringComparison.OrdinalIgnoreCase) || path.EndsWith(@"\AppData\LocalLow", StringComparison.OrdinalIgnoreCase))
                 return "پوشهٔ اصلی داده‌ها یا پروفایل قابل حذف نیست؛ یک زیرپوشه انتخاب کنید";
@@ -47,9 +54,9 @@ namespace Spacio
                 Path.Combine(local, "Microsoft", "Windows"), Path.Combine(local, "Microsoft", "WindowsApps"), Path.Combine(local, "Packages"),
                 Path.Combine(roaming, "Microsoft", "Windows"), Path.Combine(common, "Microsoft") };
             foreach (var root in protectedPaths)
-                if (!String.IsNullOrEmpty(root) && (Paths.Within(path, root) || Paths.Within(root, path))) return "مسیر محافظت‌شدهٔ سیستم یا Spacio؛ حذف‌کنندهٔ برنامه را به‌کار ببرید";
+                if (!String.IsNullOrEmpty(root) && !(reviewedInstallation && programRoots.Any(p => !String.IsNullOrEmpty(p) && Paths.Equal(root, p))) && (Paths.Within(path, root) || Paths.Within(root, path))) return "مسیر محافظت‌شدهٔ سیستم یا Spacio؛ حذف‌کنندهٔ برنامه را به‌کار ببرید";
             foreach (var name in new [] { "Windows", "Program Files", "Program Files (x86)", "Recovery", "$RECYCLE.BIN", "System Volume Information", "Boot", "EFI", "MSOCache" })
-                if (Paths.Within(path, Path.Combine(disk, name))) return "مسیر محافظت‌شدهٔ سیستم";
+                if (!(reviewedInstallation && (name == "Program Files" || name == "Program Files (x86)")) && Paths.Within(path, Path.Combine(disk, name))) return "مسیر محافظت‌شدهٔ سیستم";
             // Protect scan storage in isolated fixtures and non-default user profiles too.
             string normalized = path.Replace('/', '\\');
             if (normalized.IndexOf(@"\AppData\Local\Spacio\", StringComparison.OrdinalIgnoreCase) >= 0 || normalized.EndsWith(@"\AppData\Local\Spacio", StringComparison.OrdinalIgnoreCase))
@@ -57,16 +64,17 @@ namespace Spacio
             return null;
         }
 
-        internal static ReviewedRemoval Prepare(string path, CancellationToken token)
+        internal static ReviewedRemoval Prepare(string path, CancellationToken token, string installation = null)
         {
             path = Paths.Normalize(path); Paths.RequireLocal(path);
-            string blocked = ProtectedReason(path); if (blocked != null) throw new IOException(L.T(blocked));
-            var plan = new ReviewedRemoval { AppData = path.IndexOf(@"\AppData\", StringComparison.OrdinalIgnoreCase) >= 0 || Paths.Within(path, Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData)) };
+            if (installation != null && !Paths.Equal(path, installation)) throw new IOException("Invalid installation boundary.");
+            string blocked = ProtectedReason(path, installation); if (blocked != null) throw new IOException(L.T(blocked));
+            var plan = new ReviewedRemoval { installBoundary = installation, AppData = path.IndexOf(@"\AppData\", StringComparison.OrdinalIgnoreCase) >= 0 || Paths.Within(path, Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData)) };
             var held = NativeRemoval.PinAncestors(path);
             try
             {
                 var rootHandle = NativeRemoval.Open(path, false); held.Add(rootHandle);
-                var root = Read(path, null, rootHandle); plan.Nodes.Add(root);
+                var root = Read(path, null, rootHandle, installation); plan.Nodes.Add(root);
                 var pending = new Stack<Node>(); if (root.Entry.IsDirectory && !root.Link) pending.Push(root);
                 while (pending.Count > 0)
                 {
@@ -77,7 +85,7 @@ namespace Spacio
                         var handle = NativeRemoval.Open(childPath, false);
                         try
                         {
-                            var node = Read(childPath, parent.Entry, handle); plan.Nodes.Add(node); parent.Entry.Children.Add(node.Entry);
+                            var node = Read(childPath, parent.Entry, handle, installation); plan.Nodes.Add(node); parent.Entry.Children.Add(node.Entry);
                             if (node.Entry.IsDirectory && !node.Link) { held.Add(handle); handle = null; pending.Push(node); }
                         }
                         finally { if (handle != null) handle.Dispose(); }
@@ -93,11 +101,11 @@ namespace Spacio
             }
             finally { foreach (var handle in held.AsEnumerable().Reverse()) handle.Dispose(); }
         }
-        private static Node Read(string path, Entry parent, SafeFileHandle handle)
+        private static Node Read(string path, Entry parent, SafeFileHandle handle, string installation = null)
         {
             var info = NativeRemoval.Read(handle); var attributes = (FileAttributes)info.Attributes;
             if ((attributes & FileAttributes.Directory) != 0 && (attributes & FileAttributes.ReparsePoint) == 0)
-            { string protectedReason = ProtectedReason(path); if (protectedReason != null) throw new IOException(L.T(protectedReason) + "\n" + path); }
+            { string protectedReason = ProtectedReason(path, installation); if (protectedReason != null) throw new IOException(L.T(protectedReason) + "\n" + path); }
             if ((info.Attributes & (4u | 0x1000u | 0x40000u | 0x400000u)) != 0) throw new IOException(L.T("فایل سیستمی یا ابری قابل حذف نیست") + "\n" + path);
             var node = new Node { Identity = info, Entry = new Entry { Path = path, Name = Path.GetFileName(path), Parent = parent,
                 IsDirectory = (attributes & FileAttributes.Directory) != 0, Attributes = attributes, CreatedUtc = DateTime.FromFileTimeUtc(info.Creation),
@@ -116,15 +124,15 @@ namespace Spacio
             else if (!node.Entry.IsDirectory) { node.Entry.Bytes = info.Length; node.Entry.FileCount = 1; }
             return node;
         }
-        private static void Verify(Node expected, SafeFileHandle handle, bool directoryContentsChanged = false)
+        private void Verify(Node expected, SafeFileHandle handle, bool directoryContentsChanged = false)
         {
-            var actual = Read(expected.Entry.Path, null, handle);
+            var actual = Read(expected.Entry.Path, null, handle, installBoundary);
             if (!expected.Identity.Same(actual.Identity, directoryContentsChanged) || expected.Reparse != actual.Reparse)
                 throw new IOException(L.T("مورد از زمان پیش‌نمایش تغییر کرده است؛ دوباره بررسی کنید") + "\n" + expected.Entry.Path);
         }
         internal void DeletePermanent(CancellationToken token)
         {
-            string blocked = ProtectedReason(Root.Path); if (blocked != null) throw new IOException(L.T(blocked));
+            string blocked = ProtectedReason(Root.Path, installBoundary); if (blocked != null) throw new IOException(L.T(blocked));
             var held = NativeRemoval.PinAncestors(Root.Path);
             var directories = new Dictionary<string, SafeFileHandle>(StringComparer.OrdinalIgnoreCase);
             int deleted = 0; string active = Root.Path;
@@ -166,7 +174,7 @@ namespace Spacio
         internal void VerifyForRecycle(CancellationToken token)
         {
             if (LinkCount > 0) throw new IOException(L.T("پوشهٔ دارای پیوند به سطل بازیافت منتقل نمی‌شود؛ حذف دائمی فقط با تأیید شما انجام می‌شود"));
-            var fresh = Prepare(Root.Path, token);
+            var fresh = Prepare(Root.Path, token, installBoundary);
             if (Nodes.Count != fresh.Nodes.Count) throw new IOException(L.T("مورد از زمان پیش‌نمایش تغییر کرده است؛ دوباره بررسی کنید"));
             var byPath = fresh.Nodes.ToDictionary(n => n.Entry.Path, StringComparer.OrdinalIgnoreCase);
             foreach (var node in Nodes)

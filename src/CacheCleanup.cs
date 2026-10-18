@@ -13,6 +13,7 @@ namespace Spacio
     {
         internal string Local = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
         internal string Roaming = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+        internal string Common = Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData);
     }
     internal sealed class CacheSpec
     {
@@ -27,6 +28,7 @@ namespace Spacio
         internal CacheSpec Spec;
         internal bool Candidate;
         internal ReviewedRemoval Removal;
+        internal LeftoverCandidate Leftover;
         internal string Failure = "";
         public bool Chosen { get; set; }
         public string Path { get; internal set; }
@@ -34,7 +36,7 @@ namespace Spacio
         public string Owner { get { return L.T(owner); } internal set { owner = value; } }
         public string Evidence { get { return L.T(evidence); } internal set { evidence = value; } }
         public string Detail { get { return Owner + "\n" + Path + "\n" + Evidence + "\n" + Status; } }
-        public string Kind { get { return L.T(Spec != null ? (Spec.Shared ? "کش مشترک" : "کش شناخته‌شده") : Candidate ? "نیازمند بررسی" : "مورد انتخابی"); } }
+        public string Kind { get { return L.T(Leftover != null ? Leftover.Kind : Spec != null ? (Spec.Shared ? "کش مشترک" : "کش شناخته‌شده") : Candidate ? "نیازمند بررسی" : "مورد انتخابی"); } }
         public string Size { get { return Entry == null ? "—" : Formats.Size(Entry.Bytes); } }
         public string Count { get { return Entry == null ? "—" : Entry.FileCount.ToString("N0"); } }
         public string Status { get { return L.T(Failure.Length > 0 ? Failure : Entry == null ? "بررسی نشده" : Entry.Issues > 0 ? "ناقص" : "آمادهٔ بررسی"); } }
@@ -79,10 +81,10 @@ namespace Spacio
             foreach (string profile in Directories(System.IO.Path.Combine(roots.Local, @"Mozilla\Firefox\Profiles")))
                 foreach (string suffix in new [] { "cache2", "startupCache", "shader-cache" })
                     add(System.IO.Path.Combine(profile, suffix), "Firefox · " + System.IO.Path.GetFileName(profile), "firefox", new [] { "firefox" }, false);
-            foreach (string product in new [] { "Code", "Code - Insiders", "discord", "discordptb", "discordcanary", "Slack" })
+            foreach (string product in new [] { "Code", "Code - Insiders", "discord", "discordptb", "discordcanary", "Slack", "Notion" })
                 foreach (string suffix in new [] { "Cache", "Code Cache", "GPUCache" })
-                    add(System.IO.Path.Combine(roots.Roaming, product, suffix), product, product.StartsWith("Code", StringComparison.Ordinal) ? "code" : product.StartsWith("discord", StringComparison.Ordinal) ? "discord" : "slack",
-                        product.StartsWith("Code", StringComparison.Ordinal) ? new [] { "Code", "Code - Insiders" } : product.StartsWith("discord", StringComparison.Ordinal) ? new [] { "Discord", "DiscordPTB", "DiscordCanary" } : new [] { "slack" }, false);
+                    add(System.IO.Path.Combine(roots.Roaming, product, suffix), product, product.StartsWith("Code", StringComparison.Ordinal) ? "code" : product.StartsWith("discord", StringComparison.Ordinal) ? "discord" : product == "Notion" ? "notion" : "slack",
+                        product.StartsWith("Code", StringComparison.Ordinal) ? new [] { "Code", "Code - Insiders" } : product.StartsWith("discord", StringComparison.Ordinal) ? new [] { "Discord", "DiscordPTB", "DiscordCanary" } : new [] { product }, false);
             foreach (string suffix in new [] { "Media Cache", "Media Cache Files" })
                 add(System.IO.Path.Combine(roots.Roaming, "Adobe", "Common", suffix), "Adobe · Premiere / After Effects / Media Encoder", "adobe-media",
                     new [] { "Adobe Premiere Pro", "AfterFX", "Adobe Media Encoder" }, true);
@@ -166,11 +168,12 @@ namespace Spacio
             if (name.Contains("visual studio code")) return "code";
             if (name.StartsWith("discord")) return "discord";
             if (name == "slack") return "slack";
+            if (name == "notion" || System.Text.RegularExpressions.Regex.IsMatch(name, @"^notion \d+(\.\d+)*$")) return "notion";
             if (name == "steam") return "steam";
             if (name.StartsWith("adobe premiere") || name.StartsWith("adobe after effects") || name.StartsWith("adobe media encoder")) return "adobe-media";
             return "";
         }
-        internal static List<InstalledApp> Read(CancellationToken token)
+        internal static List<InstalledApp> Read(CancellationToken token, bool strict = false)
         {
             var result = new List<InstalledApp>();
             foreach (var hive in new [] { RegistryHive.CurrentUser, RegistryHive.LocalMachine })
@@ -186,9 +189,12 @@ namespace Spacio
                                 token.ThrowIfCancellationRequested();
                                 using (var key = uninstall.OpenSubKey(name))
                                 {
-                                    if (key == null || Convert.ToString(key.GetValue("SystemComponent")) == "1" || key.GetValue("ParentKeyName") != null) continue;
+                                    if (key == null || (!strict && (Convert.ToString(key.GetValue("SystemComponent")) == "1" || key.GetValue("ParentKeyName") != null))) continue;
                                     string label = Convert.ToString(key.GetValue("DisplayName")), command = Convert.ToString(key.GetValue("UninstallString"));
-                                    if (String.IsNullOrWhiteSpace(label) || String.IsNullOrWhiteSpace(command)) continue;
+                                    // Ownership checks must include hidden child components
+                                    // even when they have no separately callable uninstaller.
+                                    if (!strict && (String.IsNullOrWhiteSpace(label) || String.IsNullOrWhiteSpace(command))) continue;
+                                    if (String.IsNullOrWhiteSpace(label)) label = name;
                                     var app = new InstalledApp { Id = hive + "/" + view + "/" + name, Name = label, Version = Convert.ToString(key.GetValue("DisplayVersion")), Publisher = Convert.ToString(key.GetValue("Publisher")),
                                         Location = Convert.ToString(key.GetValue("InstallLocation")).Trim('"', ' '), DisplayIcon = Convert.ToString(key.GetValue("DisplayIcon")),
                                         Command = command, Msi = Convert.ToString(key.GetValue("WindowsInstaller")) == "1", Family = Family(label) };
@@ -197,7 +203,7 @@ namespace Spacio
                             }
                         }
                     }
-                    catch (System.Security.SecurityException) { } catch (UnauthorizedAccessException) { } catch (IOException) { }
+                    catch (System.Security.SecurityException) { if (strict) throw; } catch (UnauthorizedAccessException) { if (strict) throw; } catch (IOException) { if (strict) throw; }
             var hermes = DetectHermes(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "hermes"));
             if (hermes != null && !result.Any(a => !String.IsNullOrEmpty(a.Location) && Paths.Equal(a.Location, hermes.Location))) result.Add(hermes);
             return result.GroupBy(a => a.Name + "\n" + a.Version + "\n" + a.Command, StringComparer.OrdinalIgnoreCase).Select(g => g.First()).OrderBy(a => a.Name).ToList();
@@ -346,6 +352,7 @@ namespace Spacio
                         token.ThrowIfCancellationRequested();
                         try
                         {
+                            if (item.Leftover != null) AppLeftovers.VerifyForDeletion(item.Leftover, token);
                             if (item.Removal != null)
                             {
                                 if (!item.CanChoose || !Paths.Equal(item.Path, item.Removal.Root.Path)) throw new IOException("Invalid reviewed removal plan.");

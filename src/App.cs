@@ -99,6 +99,7 @@ namespace Spacio
                 if (savingScan) { closeAfterSave = true; e.Cancel = true; return; }
                 if (busy && scanCancel == null && !refreshing) { e.Cancel = true; return; }
                 closing = true; StopUpdates(); StopLiveUpdates(); if (scanCancel != null) scanCancel.Cancel(); if (queryCancel != null) queryCancel.Cancel();
+                if (lastUninstall != null) lastUninstall.Dispose();
             };
             Window.Loaded += delegate { DrawMap(); };
             U<TextBox>("PathBox").Text = System.IO.Path.GetPathRoot(Environment.GetFolderPath(Environment.SpecialFolder.Windows));

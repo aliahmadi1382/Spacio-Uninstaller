@@ -49,14 +49,17 @@ namespace Spacio
                 else try { await ReviewCleanupItems(U<DataGrid>("CacheGrid").SelectedItems.Cast<CleanupItem>().ToList(), null); } catch (OperationCanceledException) { CleanupStatus("بررسی متوقف شد؛ نتیجهٔ قبلی حفظ شده است"); } catch (Exception e) { Error(e); }
             };
             U<Button>("CleanupSettings").Click += delegate { OpenShell("ms-settings:appsfeatures", null); };
+            U<Button>("CleanupLeftovers").Click += async delegate { if (lastUninstall != null && !busy) try { await ContinueUninstall(lastUninstall); } catch (Exception e) { Error(e); } };
             U<TextBox>("CleanupSearch").TextChanged += delegate { FilterCleanup(); };
             U<DataGrid>("CacheGrid").SelectionChanged += delegate { UpdateCleanupControls(); };
             U<DataGrid>("InstalledAppsGrid").SelectionChanged += delegate { UpdateCleanupControls(); };
         }
-        private async Task OpenCleanupPage(bool apps)
+        private async Task OpenCleanupPage(bool apps, UninstallSession leftovers = null)
         {
             if (cleanupCancel != null || (busy && !refreshingAutomatically)) return;
-            cleanupPageOpen = true; cleanupAppsPage = apps; cleanupFamily = "";
+            if (leftoverView != leftovers) cleanupItems.Clear();
+            cleanupPageOpen = true; cleanupAppsPage = apps; cleanupFamily = ""; leftoverView = leftovers;
+            if (leftovers != null) U<TextBox>("CleanupSearch").Text = "";
             U<Grid>("Workspace").Visibility = Visibility.Collapsed;
             U<Grid>("CleanupWorkspace").Visibility = Visibility.Visible;
             foreach (string name in navNames.Concat(new [] { "FilesNav", "CacheNav", "AppsButton" })) SetNavActive(name, name == (apps ? "AppsButton" : "CacheNav"));
@@ -67,7 +70,7 @@ namespace Spacio
         }
         private void CloseCleanupPage()
         {
-            cleanupPageOpen = false;
+            cleanupPageOpen = false; leftoverView = null;
             U<Grid>("CleanupWorkspace").Visibility = Visibility.Collapsed; U<Grid>("Workspace").Visibility = Visibility.Visible;
             SetNavActive("CacheNav", false); SetNavActive("AppsButton", false);
             AttachLive(true);
@@ -77,6 +80,13 @@ namespace Spacio
             U<TextBlock>("CleanupTitle").Text = cleanupAppsPage ? L.T("برنامه‌های نصب‌شده") : "Cache";
             U<TextBlock>("CleanupSubtitle").Text = L.T(cleanupAppsPage ? "حذف‌کنندهٔ برنامه و بررسی کش‌های باقی‌مانده" : "مسیر، حجم و وابستگی کش‌ها، پیش از هر پاک‌سازی");
             U<TextBlock>("CleanupCoverage").Text = L.T(cleanupAppsPage ? "برنامه‌های ثبت‌شدهٔ دسکتاپ نمایش داده می‌شوند. حذف برنامه با حذف‌کنندهٔ خودش انجام می‌شود؛ کش‌های باقی‌مانده جداگانه مرور و تأیید می‌شوند." : "کش‌های شناخته‌شدهٔ کاربر فعلی و پوشه‌های احتمالی در اسکن بازشده. این فهرست تضمین همهٔ کش‌های سیستم نیست. کش مشترک، فایل شخصی و پوشهٔ احتمالی یکسان نیستند.");
+            if (leftoverView != null)
+            {
+                U<TextBlock>("CleanupTitle").Text = L.T("باقی‌مانده‌های برنامه") + " · " + leftoverView.App.Name;
+                U<TextBlock>("CleanupSubtitle").Text = L.T("مسیر و حجم داده‌ها و کش‌ها؛ انتخاب و تأیید جداگانه پیش از حذف");
+                U<TextBlock>("CleanupCoverage").Text = L.T("همهٔ موارد بدون تیک‌اند. موارد احتمالی و مشترک را بررسی کنید؛ داده‌های برنامه می‌توانند شامل تنظیمات و اطلاعات حساب باشند. پوشش همهٔ مسیرهای سفارشی تضمین نمی‌شود.");
+            }
+            U<TextBlock>("CleanupEmpty").Text = L.T(leftoverView == null ? "برای دیدن موارد، بررسی را اجرا کنید" : "برای این برنامه موردی در فهرست نیست؛ وضعیت بررسی را پایین صفحه ببینید");
             U<Button>("CleanupLanguage").Content = L.Persian ? "English ⇄" : "فارسی ⇄";
             U<TextBox>("CleanupSearch").ToolTip = L.T("جست‌وجو با نام برنامه یا مسیر");
             U<TextBlock>("CleanupStatus").Text = L.T(cleanupStatusText);
@@ -114,6 +124,8 @@ namespace Spacio
             U<Button>("CleanupLanguage").IsEnabled = !busy;
             U<Button>("CleanupBack").IsEnabled = cleanupCancel == null;
             U<Button>("CleanupStop").Visibility = cleanupCancel == null ? Visibility.Collapsed : Visibility.Visible;
+            U<Button>("CleanupLeftovers").Visibility = lastUninstall == null || leftoverView != null ? Visibility.Collapsed : Visibility.Visible;
+            U<Button>("CleanupLeftovers").IsEnabled = !busy && cleanupCancel == null;
             if (cleanupCancel != null && !cleanupPageOpen) U<Button>("StopButton").Visibility = Visibility.Visible;
         }
         private void CleanupStatus(string message)
@@ -127,7 +139,14 @@ namespace Spacio
             SetBusy(true, false); CleanupStatus(cleanupAppsPage ? "در حال خواندن فهرست برنامه‌ها…" : "در حال بررسی کش‌ها؛ فایل‌ها تغییر نمی‌کنند");
             try
             {
-                if (cleanupAppsPage) installedApps = await Task.Run(() => InstalledApps.Read(token), token);
+                if (leftoverView != null)
+                {
+                    var session = leftoverView;
+                    var progress = new Progress<string>(p => { if (!token.IsCancellationRequested) CleanupStatus(L.T("بررسی باقی‌مانده‌های برنامه") + " · " + p); });
+                    var rows = await Task.Run(() => AppLeftovers.Scan(session, token, progress), token);
+                    token.ThrowIfCancellationRequested(); cleanupItems = rows;
+                }
+                else if (cleanupAppsPage) installedApps = await Task.Run(() => InstalledApps.Read(token), token);
                 else
                 {
                     var basis = snapshot;
@@ -140,7 +159,7 @@ namespace Spacio
                     }, token);
                     token.ThrowIfCancellationRequested(); cleanupItems = rows;
                 }
-                FilterCleanup(); CleanupStatus("بررسی تمام شد؛ برای دیدن جزئیات موارد را انتخاب کنید");
+                FilterCleanup(); CleanupStatus(leftoverView != null && cleanupItems.Count == 0 ? "در مسیرهای بررسی‌شده باقی‌مانده‌ای پیدا نشد؛ مسیرهای سفارشی ممکن است پوشش داده نشوند" : "بررسی تمام شد؛ برای دیدن جزئیات موارد را انتخاب کنید");
             }
             catch (OperationCanceledException) { CleanupStatus("بررسی متوقف شد؛ نتیجهٔ قبلی حفظ شده است"); }
             catch (Exception e) { CleanupStatus(e.Message); }
@@ -207,6 +226,7 @@ namespace Spacio
                 var related = await Task.Run(() => CacheCatalog.Discover(cleanupRoots, token).Where(s => families.Contains(s.Family)).Select(s => CacheCatalog.Inspect(s, token, cleanupRoots)).ToList(), token);
                 foreach (var row in related) { row.Chosen = false; selected.Add(row); }
                 SetBusy(false, false);
+                if (cleanupCancel == operation) cleanupCancel = null;
                 await ReviewCleanupItems(selected, app, false, onLoaded);
             }
             catch (OperationCanceledException) { }
@@ -222,6 +242,7 @@ namespace Spacio
                 try
                 {
                     selected = await Task.Run(() => selected.Select(i => {
+                        if (i.Leftover != null) return AppLeftovers.Inspect(i.Leftover, operation.Token);
                         if (i.Spec != null) return CacheCatalog.Inspect(i.Spec, operation.Token, cleanupRoots);
                         if (i.Entry == null || app != null) return i;
                         var fresh = CleanupEngine.InspectSelection(i.Entry, i.Source, operation.Token); fresh.Candidate = i.Candidate; return fresh;
@@ -239,15 +260,9 @@ namespace Spacio
             {
                 try
                 {
-                    var currentApp = (await Task.Run(() => InstalledApps.Read(CancellationToken.None))).FirstOrDefault(a => a.Id == app.Id);
-                    if (currentApp == null || currentApp.Command != app.Command) throw new IOException(L.T("ثبت برنامه تغییر کرده است؛ دوباره بررسی کنید"));
-                    Process.Start(InstalledApps.StartInfo(currentApp));
-                    // Bootstrap uninstallers may exit before their child installer. Never infer
-                    // uninstall success or delete associated data from a process exit alone.
-                    ShowDialogText("مرحلهٔ بعد", L.T("پس از پایان حذف‌کننده، در صفحهٔ Cache بررسی دوباره را بزنید و کش‌های باقی‌مانده را جداگانه تأیید کنید."), false);
-                    if (cleanupCancel != null) { cleanupCancel.Dispose(); cleanupCancel = null; }
-                    await OpenCleanupPage(false); cleanupFamily = app.Family; FilterCleanup();
+                    await BeginUninstall(app);
                 }
+                catch (OperationCanceledException) { CleanupStatus("بررسی متوقف شد؛ نتیجهٔ قبلی حفظ شده است"); }
                 catch (Exception e) { Error(e); }
                 return;
             }
@@ -280,6 +295,7 @@ namespace Spacio
                 if (ownToken) { cleanupCancel.Dispose(); cleanupCancel = null; }
                 SetBusy(false, false); UpdateSelection();
             }
+            if (leftoverView != null && cleanupCancel == null && !closing) await ScanCleanupPage();
         }
         private async Task<bool> ReconcileCleanup(string[] paths, bool previouslyStale)
         {

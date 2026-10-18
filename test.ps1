@@ -38,6 +38,8 @@ if (-not (Test-Path -LiteralPath ($previewPrefix + '.pages.ok.txt'))) { throw 'F
 Get-Content -LiteralPath ($previewPrefix + '.pages.ok.txt')
 if (-not (Test-Path -LiteralPath ($previewPrefix + '.cleanup.ok.txt'))) { throw 'Cleanup page and confirmation checks failed.' }
 Get-Content -LiteralPath ($previewPrefix + '.cleanup.ok.txt')
+if (-not (Test-Path -LiteralPath ($previewPrefix + '.leftovers.ok.txt'))) { throw 'Post-uninstall leftover workflow checks failed.' }
+Get-Content -LiteralPath ($previewPrefix + '.leftovers.ok.txt')
 $reopenProcess = Start-Process -FilePath $exePath -ArgumentList @('--ui-smoke', ('"' + $fixturePath + '"'), ('"' + $previewPrefix + '"'), '--reopen') -WindowStyle Hidden -PassThru
 if (-not $reopenProcess.WaitForExit(60000)) { throw 'Cache restart check exceeded 60 seconds.' }
 if ($reopenProcess.ExitCode -ne 0 -or -not (Test-Path -LiteralPath ($previewPrefix + '.reopen.ok.txt'))) { throw 'Cache restart check failed.' }

@@ -4,13 +4,19 @@
 
 برنامهٔ دسکتاپ ویندوز برای بررسی حجم فایل‌ها و پوشه‌ها، با رابط فارسی و انگلیسی.
 
+نسخهٔ **۱.۷.۰** پس از حذف برنامه از داخل Spacio، صفحهٔ **باقی‌مانده‌های برنامه** را خودکار باز می‌کند: مسیر و حجم پوشهٔ نصب، داده‌ها و کش‌های مرتبط نمایش داده می‌شود. موارد دلخواه را انتخاب کنید، **مرور پاک‌سازی** را بزنید، در پیش‌نمایش تیک موارد موردنظر را بزنید و حذف را تأیید کنید. هیچ باقی‌مانده‌ای از قبل برای حذف انتخاب نمی‌شود؛ تنظیمات و اطلاعات حساب هم ممکن است در پوشهٔ داده‌ها باشند.
+
+Spacio اطلاعات برنامه را پیش از اجرای حذف‌کننده نگه می‌دارد و برای بررسی خودکار، خروج موفق فرایند و حذف پایدار ثبت برنامه را بررسی می‌کند. اگر پنجرهٔ اولیه زود بسته شود، حذف لغو شود یا نتیجه روشن نباشد، موفقیت اعلام نمی‌کند. پس از اتمام واقعی، می‌توانید **حذف‌کننده تمام شده؛ بررسی باقی‌مانده‌ها** را بزنید؛ این گزینه فقط بررسی را شروع می‌کند. **بعداً؛ فقط توقف پیگیری** حذف‌کننده را نمی‌بندد. دکمهٔ **باقی‌مانده‌های آخرین حذف** در صفحهٔ برنامه‌ها/Cache، همین بررسی را در همان اجرای Spacio دوباره باز می‌کند.
+
+فهرست به مسیرهای ثبت‌شده یا شناخته‌شده و پیشنهادهای با نام دقیق همان محصول محدود است. ارتباط موارد **احتمالی** تأیید نشده و موارد مشترک برچسب دارند؛ همهٔ مسیرهای سفارشی، حساب‌های دیگر یا باقی‌مانده‌های رجیستری پوشش داده نمی‌شوند. برای Notion، داده‌های Roaming و کش‌های آن جداگانه قابل بررسی‌اند. پس از حذف موارد انتخابی، همین فهرست دوباره تازه می‌شود؛ اسکن‌های ذخیره‌شده باقی می‌مانند.
+
 نسخهٔ **۱.۶.۰** حذف کامل داده‌های انتخابی برنامه‌ها، از جمله زیرپوشه‌های AppData، را اضافه می‌کند. مورد را در جدول انتخاب کنید و **مرور حذف و کش‌های مرتبط** را بزنید؛ تمام محتوای قابل‌خواندن دوباره بررسی می‌شود. پس از دیدن جزئیات، تیک تأیید حذف داده‌ها و تیک حذف دائمی را بزنید. تنظیمات، اطلاعات حساب و تاریخچهٔ داخل همان پوشه هم حذف می‌شوند. پیوندها و مقصدشان نمایش داده می‌شوند؛ فقط خود پیوند حذف می‌شود و مقصد باقی می‌ماند. پوشه‌های دارای پیوند فقط از مسیر حذف دائمی قابل حذف‌اند.
 
 برای برنامه‌های نصب‌شده مانند **Notion**، **اجرای حذف‌کنندهٔ برنامه** را بزنید. نصب پیش‌فرض پشتیبانی‌شدهٔ **Hermes Agent** نیز از روی لانچر و اطلاعات حذف‌کنندهٔ خودش شناسایی می‌شود؛ برای حذف برنامه و داده‌های Hermes، در حذف‌کنندهٔ بازشده **Full uninstall** را انتخاب و تأیید کنید. کش‌ها و داده‌های باقی‌مانده بررسی و تأیید جداگانه دارند. فایل قفل‌شده یا غیرقابل‌دسترسی با مسیر و دلیل خطا گزارش می‌شود؛ Spacio برنامه‌های باز را به‌زور نمی‌بندد و فایل‌های سیستم، کل پروفایل و اسکن‌های خودش را حذف نمی‌کند.
 
 **پایش زنده:** برچسب **زنده · منتظر تغییرات** یعنی برنامه منتظر اعلان فایل‌سیستم است و اسکن انجام نمی‌دهد. اعلان‌های سریع دسته‌بندی می‌شوند؛ اعلان تکراریِ ریشه به‌تنهایی اسکن کامل راه نمی‌اندازد. پس از بررسی سنگین، بین کارهای خودکار فاصله می‌افتد و خطاهای متوالی با تأخیر بیشتر دوباره بررسی می‌شوند. اعتبارسنجی پنج‌دقیقه‌ای فقط همان پوشهٔ بازشده باقی است. دکمهٔ **توقف پایش / ادامهٔ پایش** پایین صفحه، پایش را برای همین اجرای برنامه متوقف یا فعال می‌کند؛ Refresh دستی و نتیجهٔ ذخیره‌شده باقی می‌مانند. پس از ادامه، فقط پوشهٔ فعلی اعتبارسنجی می‌شود. حرکت دائمی نوار بررسی، در نبود تغییر یا خطا، حالت عادیِ انتظار نیست.
 
-فایل نصب فعلی برای ارسال به کاربران: **Spacio-1.6.0-Setup.exe** در [آخرین انتشار](https://github.com/aliahmadi1382/Spacio-Uninstaller/releases/latest).
+فایل نصب فعلی برای ارسال به کاربران: **Spacio-1.7.0-Setup.exe** در [آخرین انتشار](https://github.com/aliahmadi1382/Spacio-Uninstaller/releases/latest).
 
 از نسخهٔ **۱.۵.۱** فایل نصب **Setup** اضافه شده است. نصب به‌صورت پیش‌فرض آیکون سبز Spacio را روی دسکتاپ و در Start Menu می‌سازد. آپدیت داخل برنامه همچنان فعال است و اسکن‌های قبلی باقی می‌مانند.
 
@@ -20,7 +26,7 @@
 
 صفحهٔ Cache مسیرهای شناخته‌شدهٔ کاربر فعلی را بررسی می‌کند: کش Chrome، Edge، Brave، Firefox، VS Code، Discord، Slack، Steam، کش رسانه‌ای مشترک Adobe و کش shaderهای DirectX/NVIDIA/AMD. پوشه‌های با نام `cache` یا `.cache` در اسکن بازشده فقط با برچسب **نیازمند بررسی** نمایش داده می‌شوند. این فهرست همهٔ کش‌های هر سیستم یا هر فایل را تضمین نمی‌کند؛ مسیرهای سفارشی، حساب‌های دیگر، داده‌های حساب/کوکی/رمز، کش نصب‌کننده‌ها و فایل‌های شخصی به‌عنوان کش شناخته‌شده حذف نمی‌شوند. پوشهٔ اصلی کش نگه داشته می‌شود و فقط محتوای مرورشده پاک می‌شود. کش‌های مشترک متعلق به یک فایل خاص نیستند؛ بازسازی آن‌ها ممکن است اجرای بعدی برنامه را کندتر کند.
 
-برای برنامه‌ها، حذف‌کنندهٔ ثبت‌شدهٔ خود برنامه اجرا می‌شود؛ پس از پایان آن، **بررسی دوباره** در Cache را بزنید و کش‌های باقی‌مانده را جدا تأیید کنید. برنامه‌های دسکتاپ ثبت‌شده فهرست می‌شوند؛ برنامه‌های دیگر از **تنظیمات برنامه‌های ویندوز** مدیریت می‌شوند. برنامهٔ باز یا فایل قفل‌شده خودکار بسته نمی‌شود و مورد ناموفق در گزارش می‌ماند. این نسخه رجیستری یا داده‌های ناشناخته را به‌عنوان «باقی‌مانده» حدس نمی‌زند.
+برای برنامه‌ها، حذف‌کنندهٔ ثبت‌شدهٔ خود برنامه اجرا می‌شود؛ پس از پایان تأییدشدهٔ آن، صفحهٔ باقی‌مانده‌ها باز می‌شود و حذف داده‌ها/کش‌ها تأیید جداگانه می‌خواهد. برنامه‌های دسکتاپ ثبت‌شده فهرست می‌شوند؛ برنامه‌های دیگر از **تنظیمات برنامه‌های ویندوز** مدیریت می‌شوند. برنامهٔ باز یا فایل قفل‌شده خودکار بسته نمی‌شود و مورد ناموفق در گزارش می‌ماند. رجیستری پاک‌سازی نمی‌شود و ارتباط مسیرهای احتمالی قطعی تلقی نمی‌شود.
 
 در نسخهٔ **۱.۴.۲** پایش خودکار هم فقط پوشهٔ بازشده و زیرپوشه‌هایش را دنبال می‌کند؛ حتی اگر نتیجهٔ آن از اسکن ذخیره‌شدهٔ کل درایو آمده باشد. بررسی شروع برنامه، بررسی دوره‌ای و جبران اعلان‌های ازدست‌رفته به همان پوشه محدودند. با ورود به پوشهٔ دیگری، بررسی خودکار قبلی لغو می‌شود. Refresh دستی نیز می‌تواند بررسی خودکار فعال را متوقف کند و مسیر کادر را تازه‌سازی کند. سایر بخش‌های اسکن ذخیره‌شده باقی می‌مانند و هنگام بازکردنشان بررسی می‌شوند.
 
@@ -32,7 +38,7 @@
 
 ## اجرا
 
-روش پیشنهادی: فایل `Spacio-1.6.0-Setup.exe` را اجرا کنید، گزینهٔ میان‌بر دسکتاپ را نگه دارید و **نصب** را بزنید. مسیر نصب `%LOCALAPPDATA%\Programs\Spacio` است و Administrator لازم نیست. پیش از نصب مجدد یا حذف برنامه، Spacio را ببندید. Setup برنامه‌ها را اجباری نمی‌بندد و نسخهٔ قدیمی‌تر را روی نسخهٔ جدید نصب نمی‌کند. نصاب هم فارسی و انگلیسی دارد.
+روش پیشنهادی: فایل `Spacio-1.7.0-Setup.exe` را اجرا کنید، گزینهٔ میان‌بر دسکتاپ را نگه دارید و **نصب** را بزنید. مسیر نصب `%LOCALAPPDATA%\Programs\Spacio` است و Administrator لازم نیست. پیش از نصب مجدد یا حذف برنامه، Spacio را ببندید. Setup برنامه‌ها را اجباری نمی‌بندد و نسخهٔ قدیمی‌تر را روی نسخهٔ جدید نصب نمی‌کند. نصاب هم فارسی و انگلیسی دارد.
 
 نسخهٔ قابل حمل نیز موجود است: ZIP را استخراج کنید و `Spacio.exe` را همراه `Spacio.exe.config` اجرا کنید. سیستم موردنیاز هر دو روش: Windows 10/11 نسخهٔ ۶۴ بیتی با .NET Framework 4.8. نصب و اجرای اولیه به اینترنت نیاز ندارد؛ دریافت آپدیت به اینترنت نیاز دارد. این نسخه هنوز امضای دیجیتال ناشر ندارد.
 
@@ -80,6 +86,14 @@
 
 ## English
 
+**Automatic post-uninstall review in 1.7.0:** An uninstall launched inside Spacio captures the application's identity and candidate paths first. After a successful process exit and three stable checks of registration absence, Spacio opens a dedicated leftovers view showing paths, logical sizes, file counts and evidence. Select rows, open **Review cleanup**, explicitly check the desired items and confirm. All leftovers start unchecked, including known caches; application data needs the separate data-loss acknowledgement. The scoped list refreshes after removal.
+
+An early bootstrapper exit, cancellation/error exit or unavailable registration state is not proof of removal. **Uninstaller finished; check leftovers** is a manual inspection fallback, not a success claim. **Later; stop following** leaves the uninstaller running. **Last uninstall leftovers** reopens the most recent context during this Spacio session; closing Spacio ends this follow-up context. This workflow follows uninstallers launched from Spacio, not external removals performed while it is closed.
+
+Discovery stays within captured installation paths, supported default data locations and bounded exact product-name or publisher/product suggestions under Local/Roaming AppData and ProgramData. Name matches are marked unverified; shared-family data is labelled. It does not scan the whole drive, inspect user-file contents, promise all custom locations or remove registry leftovers. Notion's documented [Roaming data location](https://www.notion.com/en-gb/help/reset-notion) is supported, with its Electron cache directories listed separately. Data-parent and cache-child selections collapse to avoid duplicate deletion and totals.
+
+Before cleanup, Spacio rechecks registration, overlapping installation ownership, running processes and the fresh file preview. A narrowly scoped Program Files exception is available only for the captured dedicated installation after unregistering; containers, shared Windows components, cloud/system data and Spacio storage remain protected. Files that need additional permissions are reported; Spacio does not take ownership or change ACLs. Saved-scan storage and formats remain unchanged.
+
 **Full selected-data removal in 1.6.0:** Explicitly selected files and application-data subfolders can be removed after a new preview, permanent-deletion acknowledgement and, for AppData or linked trees, a separate data-loss acknowledgement. This includes settings, accounts and history inside the selected folder. Recognized junctions/symlinks are displayed with their targets and are unlinked without visiting those targets. Linked trees require explicit permanent mode; recycling never falls back to permanent deletion. Other files may still use the Recycle Bin.
 
 Native handles pin ancestors and directories against rename/replacement, verify file identities and complete directory membership, and remove entries without following links. Read-only entries use Windows' ignore-read-only disposition flag without changing attributes shared by other hard links. Errors report the path and completed count; partial deletion is possible if files change or become locked during the operation. Inaccessible entries, unknown reparse points, volume mounts, cloud/system data, drive/profile containers and Spacio storage remain protected. No permissions are changed and no process is forced closed.
@@ -90,7 +104,7 @@ Native handles pin ancestors and directories against rename/replacement, verify 
 
 **Live · waiting for changes** means idle monitoring. **Changes queued** means a batch is waiting to run. Writes settle for 800 ms (up to five seconds during continuous bursts), unchanged root notifications do not rescan descendants, and costly background transactions get a 3–30 second cooldown. Repeated failures back off instead of retrying at the same short interval. Five-minute recovery validation remains scoped to the current folder. **Pause live / Resume live** stops monitoring for this app session without losing results; manual Refresh remains available. Resuming validates only the current folder. These controls distinguish normal waiting from an active check and provide a way to stop repeated work.
 
-**Setup, introduced in 1.5.1:** Share the current `Spacio-1.6.0-Setup.exe` from [Releases](https://github.com/aliahmadi1382/Spacio-Uninstaller/releases/latest). The bilingual, per-user installer writes to `%LOCALAPPDATA%\Programs\Spacio`, creates a Start Menu shortcut and an optional desktop shortcut (selected by default), and registers Spacio in Windows Installed apps. Close Spacio before reinstalling or uninstalling; Setup never forces processes closed or downgrades a newer app. The current build is unsigned.
+**Setup, introduced in 1.5.1:** Share the current `Spacio-1.7.0-Setup.exe` from [Releases](https://github.com/aliahmadi1382/Spacio-Uninstaller/releases/latest). The bilingual, per-user installer writes to `%LOCALAPPDATA%\Programs\Spacio`, creates a Start Menu shortcut and an optional desktop shortcut (selected by default), and registers Spacio in Windows Installed apps. Close Spacio before reinstalling or uninstalling; Setup never forces processes closed or downgrades a newer app. The current build is unsigned.
 
 In-app updates keep using the versioned ZIP and preserve the installed shortcuts and uninstaller. On normal startup the installed app refreshes its registered version; portable copies cannot change it. Uninstall removes only known installed files and owned shortcuts. Saved scans, preferences, personal files and updater rollback copies remain. Installation uses only the compiler bundled with .NET Framework, with no external installer toolchain.
 
@@ -100,7 +114,7 @@ Deletion review can interrupt automatic validation instead of remaining disabled
 
 The catalogue covers default current-user Chrome/Edge/Brave profile Cache, Code Cache and GPUCache; Firefox local profile cache2/startupCache/shader-cache; VS Code, Discord variants and Slack Cache/Code Cache/GPUCache; Steam htmlcache; Adobe Common Media Cache/Media Cache Files; DirectX D3DSCache and supported NVIDIA/AMD shader-cache directories. Cache roots remain; only reviewed contents are removed. This is not an exhaustive cache-to-file map. Custom locations, other accounts, installer caches, browser cookies/passwords/local storage and unknown user data are excluded. `cache`/`.cache` directories in the open scan are unverified candidates and retain ordinary path protections. Shared caches are not attributable to one document. Rebuilding caches may slow the next launch. Catalogue context: [Chromium profile locations](https://chromium.googlesource.com/chromium/src/+/HEAD/docs/user_data_dir.md), [Electron user data](https://www.electronjs.org/docs/latest/api/app), [Adobe media-cache cleanup](https://helpx.adobe.com/ca/premiere/desktop/troubleshooting/media-issues/delete-media-cache-files-manually.html).
 
-**Installed apps** lists registered desktop applications. Review an app and its known cache families, then launch its registered uninstaller (the command is visible in the button tooltip). Registration is rechecked before launch; unsupported commands and other apps can use Windows Settings. After the uninstaller finishes, check the Cache page again and confirm any remaining caches separately. Spacio does not infer completion from a launcher exiting, force processes closed, or guess registry leftovers. Association with a selected file uses registered install-location boundaries, not filename similarity. See [Windows uninstall registration](https://learn.microsoft.com/en-us/windows/win32/msi/uninstall-registry-key).
+**Installed apps** lists registered desktop applications. Review an app and its known cache families, then launch its registered uninstaller (the command is visible in the button tooltip). Registration is rechecked before launch; unsupported commands and other apps can use Windows Settings. After confirmed removal, the app-specific leftovers page opens for separate selection and confirmation. Spacio does not infer completion from a launcher exiting, force processes closed, or guess registry leftovers. Association with a selected file uses registered install-location boundaries, not filename similarity. See [Windows uninstall registration](https://learn.microsoft.com/en-us/windows/win32/msi/uninstall-registry-key).
 
 **Focused live updates in 1.4.2:** The live watcher follows the visible folder, even when that folder is restored from a cached whole-drive tree. Startup, periodic and notification-overflow checks use that same scope. Navigation cancels obsolete automatic work. Manual Refresh can interrupt automatic work and check the typed path; the rest of the cached tree is retained and ancestor totals are recalculated. Other folders are reconciled when opened.
 
@@ -141,11 +155,11 @@ cd Spacio-Uninstaller
 .\test.ps1
 
 # Build/test a separate version while the previous executable remains open:
-.\build.ps1 -Destination .\dist\v1.6.0
-.\test.ps1 -Executable .\dist\v1.6.0\Spacio.exe
-.\tools\package.ps1 -Executable .\dist\v1.6.0\Spacio.exe
-.\tools\build-setup.ps1 -Executable .\dist\v1.6.0\Spacio.exe
-.\tools\verify-setup.ps1 -Setup .\dist\Spacio-1.6.0-Setup.exe -ReferenceExecutable .\dist\v1.6.0\Spacio.exe
+.\build.ps1 -Destination .\dist\v1.7.0
+.\test.ps1 -Executable .\dist\v1.7.0\Spacio.exe
+.\tools\package.ps1 -Executable .\dist\v1.7.0\Spacio.exe
+.\tools\build-setup.ps1 -Executable .\dist\v1.7.0\Spacio.exe
+.\tools\verify-setup.ps1 -Setup .\dist\Spacio-1.7.0-Setup.exe -ReferenceExecutable .\dist\v1.7.0\Spacio.exe
 ```
 
 `test.ps1` creates isolated fixtures under `.test-data`, including a junction to another generated fixture, paths longer than 260 characters, and 10,000 empty files. Recycling and permanent-cleanup integration checks remove only generated test files/folders. Cleanup checks cover stale previews, known-cache boundaries, protected scan bytes, locked files, running owners, cancellation and command parsing without launching an uninstaller. Bilingual cleanup UI checks use generated cache fixtures under `artifacts` and test acknowledgement and cancellation. Remaining fixtures are available for inspection. Reports and off-screen Persian/English screenshots are saved to `artifacts`.

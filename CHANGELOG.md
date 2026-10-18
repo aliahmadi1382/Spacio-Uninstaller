@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.7.0
+
+- Automatically follow app uninstallers launched from Spacio and open an app-specific leftovers page after a successful process exit and three stable checks of registration absence. Early bootstrap exits, cancelled/failed uninstallers and unavailable status are not reported as success; provide a labelled manual inspection fallback and stop-following control without terminating processes.
+- Capture the app identity, installation directory, supported data locations and exact-name suggestions before uninstall registration disappears. Show remaining paths, logical sizes, file counts and association evidence. Keep all candidates unchecked, label possible/shared data, exclude unrelated apps and allow reopening the last uninstall within the current session.
+- Support Notion's Roaming data and Cache/Code Cache/GPUCache paths. Refresh the scoped leftovers after confirmed removal; detect newly created candidates and drop removed paths. Keep full preview, data-loss acknowledgement and a separate final deletion confirmation.
+- Recheck registration, overlapping installations, running ownership and native file identities before cleanup. Limit the Program Files exception to a captured dedicated installation after uninstall; retain protections for shared Windows components and Spacio data. Never remove registry entries or broaden scanning to an entire drive.
+- Verify delayed/early exits, cancelled/unknown status, a real generated helper process, unchecked discovery, exact sizes, similar-name exclusions, shared data warnings, changed previews and bilingual end-to-end selection/removal using isolated fixtures. Saved-scan formats and updater contracts are unchanged.
+
 ## 1.6.0
 
 - Allow full removal of explicitly selected application-data folders after a fresh preview and separate data-loss acknowledgement. Keep automatic cache discovery narrow and additional/shared/unverified candidates unchecked.

@@ -160,6 +160,7 @@ namespace Spacio
                 check(InstalledApps.Family("My file named Chrome.txt") == "" && InstalledApps.Family("Adobe Acrobat") == "" && InstalledApps.Family("Adobe Premiere Pro 2026") == "adobe-media", "Unrelated filenames and Acrobat are not assigned Adobe media/Chrome caches");
                 check(File.ReadAllText(canary) == "keep outside" && File.ReadAllText(protectedScan) == "unchanged scan bytes", "All deletion tests preserve outside canaries and saved scans");
                 ReviewedRemovalTests.Run(area, check);
+                AppLeftoverTests.Run(area, check);
                 lines.Add("FIXTURE=" + area); File.WriteAllLines(report, lines); return 0;
             }
             catch (Exception e) { lines.Add(e.ToString()); lines.Add("FIXTURE=" + area); File.WriteAllLines(report, lines); return 1; }
@@ -310,6 +311,7 @@ namespace Spacio
             var reopened = new SnapshotCache(cache.DirectoryPath).Find(root, CancellationToken.None);
             if (reopened == null || reopened.Snapshot.IsStale || reopened.Snapshot.Entries.Any(e => e.Path == target)) throw new Exception("Cleanup result was not persisted for restart.");
             await CheckSelectionReviewWorkflow(root);
+            await CheckLeftoverUI(prefix);
             cleanupRoots = roots; cleanupItems.Clear(); Window.Width = width; Window.Height = height; L.Persian = language; ApplyLanguage();
             File.WriteAllText(prefix + ".cleanup.ok.txt", "PASS: EN/FA cache and installed-app full pages; short-display confirmation; full preview contents; permanent acknowledgement; shared caches unchecked; Cancel preserves fixtures; actual selection-review workflow supersedes automatic refresh, revalidates stale selections and permanently deletes only a confirmed fixture; reconciliation and restart persistence. No real user data deleted or applications uninstalled.");
         }

@@ -126,7 +126,7 @@
   <Grid x:Name="CleanupWorkspace" Grid.Row="1" Grid.Column="1" Margin="26,24,26,14" Visibility="Collapsed">
    <Grid.RowDefinitions><RowDefinition Height="76"/><RowDefinition Height="70"/><RowDefinition Height="50"/><RowDefinition Height="*"/><RowDefinition Height="74"/></Grid.RowDefinitions>
    <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
-    <StackPanel><TextBlock x:Name="CleanupTitle" Text="Cache" FontSize="26" FontWeight="SemiBold"/><TextBlock x:Name="CleanupSubtitle" FontSize="12" Foreground="#93ABA5" Margin="0,7,0,0"/></StackPanel>
+    <StackPanel><TextBlock x:Name="CleanupTitle" Text="Cache" FontSize="26" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" ToolTip="{Binding Text, RelativeSource={RelativeSource Self}}"/><TextBlock x:Name="CleanupSubtitle" FontSize="12" Foreground="#93ABA5" Margin="0,7,0,0"/></StackPanel>
     <Button x:Name="CleanupBack" Grid.Column="1" Tag="بازگشت به فایل‌ها" VerticalAlignment="Top" Margin="8,0" Background="#203A32" Foreground="#8CE9CE"/>
     <Button x:Name="CleanupLanguage" Grid.Column="2" Content="English ⇄" VerticalAlignment="Top" Background="#253039"/>
    </Grid>
@@ -143,8 +143,8 @@
        <DataGridTemplateColumn Width="*" MinWidth="270"><DataGridTemplateColumn.CellTemplate><DataTemplate><StackPanel><TextBlock Text="{Binding Owner}" Foreground="#92E2C2" FontWeight="SemiBold"/><TextBlock Text="{Binding Path}" FontSize="11" Foreground="#91A7B4" TextTrimming="CharacterEllipsis" FlowDirection="LeftToRight" ToolTip="{Binding Path}" Margin="0,4,0,0"/><TextBlock Text="{Binding Evidence}" FontSize="10" Foreground="#7F97A0" TextTrimming="CharacterEllipsis" ToolTip="{Binding Evidence}"/></StackPanel></DataTemplate></DataGridTemplateColumn.CellTemplate></DataGridTemplateColumn>
        <DataGridTextColumn Binding="{Binding Size}" Width="100"/>
        <DataGridTextColumn Binding="{Binding Count}" Width="85"/>
-       <DataGridTextColumn Binding="{Binding Kind}" Width="130"/>
-       <DataGridTextColumn Binding="{Binding Status}" Width="180"/>
+       <DataGridTextColumn Binding="{Binding Kind}" Width="145"><DataGridTextColumn.ElementStyle><Style TargetType="TextBlock"><Setter Property="TextWrapping" Value="Wrap"/><Setter Property="ToolTip" Value="{Binding Kind}"/></Style></DataGridTextColumn.ElementStyle></DataGridTextColumn>
+       <DataGridTextColumn Binding="{Binding Status}" Width="180"><DataGridTextColumn.ElementStyle><Style TargetType="TextBlock"><Setter Property="TextWrapping" Value="Wrap"/><Setter Property="ToolTip" Value="{Binding Status}"/></Style></DataGridTextColumn.ElementStyle></DataGridTextColumn>
       </DataGrid.Columns>
      </DataGrid>
      <DataGrid x:Name="InstalledAppsGrid" Visibility="Collapsed" AutoGenerateColumns="False" IsReadOnly="True" CanUserAddRows="False" CanUserDeleteRows="False" SelectionMode="Single" SelectionUnit="FullRow" HeadersVisibility="Column" RowHeight="52" GridLinesVisibility="None" BorderThickness="0" Background="#161E24" EnableRowVirtualization="True" EnableColumnVirtualization="True" ScrollViewer.CanContentScroll="True">
@@ -154,10 +154,11 @@
     </Grid>
    </Border>
    <Grid Grid.Row="4" Margin="0,10,0,0"><Grid.RowDefinitions><RowDefinition Height="*"/><RowDefinition Height="25"/></Grid.RowDefinitions>
-    <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+    <Grid><Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
      <TextBlock x:Name="CleanupCount" FontSize="11" Foreground="#9DB0BD"/>
      <Button x:Name="CleanupSettings" Grid.Column="1" Tag="تنظیمات برنامه‌های ویندوز" Margin="8,0" FontSize="11" Padding="10,7"/>
-     <Button x:Name="CleanupReview" Grid.Column="2" Tag="مرور پاک‌سازی" Background="#3F2C2D" Foreground="#F1B6AB" FontSize="11" Padding="14,7"/>
+     <Button x:Name="CleanupLeftovers" Grid.Column="2" Tag="باقی‌مانده‌های آخرین حذف" Visibility="Collapsed" Margin="0,0,8,0" FontSize="11" Padding="10,7"/>
+     <Button x:Name="CleanupReview" Grid.Column="3" Tag="مرور پاک‌سازی" Background="#3F2C2D" Foreground="#F1B6AB" FontSize="11" Padding="14,7"/>
     </Grid>
     <TextBlock x:Name="CleanupStatus" Grid.Row="1" FontSize="10" Foreground="#91BBAA" TextTrimming="CharacterEllipsis"/>
    </Grid>
